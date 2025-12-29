@@ -3,10 +3,7 @@
     <!-- Search Form -->
     <div class="filter-container">
       <el-form :inline="true" :model="listQuery" class="demo-form-inline">
-        <!-- Row 1: Always Visible (partially, based on design description "Tab and Button same row", form below) -->
-        <!-- User said: "Form includes: Analysis Mode, Remaining Time, Create Time, Sample No, Order No, Status, Expert Input, Finish Time, Expert Select" -->
-        <!-- User said: "Reset and Collapse in form" -->
-
+        <!-- Row 1: Always Visible -->
         <el-row :gutter="20">
           <el-col :span="6">
             <el-form-item label="分析模式">
@@ -121,7 +118,7 @@
           </el-row>
         </div>
 
-        <!-- Action Buttons Row (Right aligned as per image suggestion or bottom right of form) -->
+        <!-- Action Buttons Row -->
         <el-row type="flex" justify="end">
           <el-button type="primary" @click="handleFilter">查询</el-button>
           <el-button @click="resetQuery">重置</el-button>
@@ -234,16 +231,18 @@
       />
 
       <el-table-column label="操作" align="center" width="280" fixed="right">
-        <template>
-          <el-button type="text" size="small">编辑</el-button>
+        <template slot-scope="{ row }">
+          <el-button type="text" size="small" @click="handleEdit(row)"
+            >编辑</el-button
+          >
           <el-button
             type="text"
             size="small"
             style="color: #f56c6c"
-            @click="handleDelete"
+            @click="handleDelete(row)"
             >删除</el-button
           >
-          <el-button type="text" size="small" @click="handleWithdraw"
+          <el-button type="text" size="small" @click="handleWithdraw(row)"
             >撤回</el-button
           >
           <el-button type="text" size="small">查看</el-button>
@@ -265,6 +264,14 @@
         @current-change="handleCurrentChange"
       />
     </div>
+
+    <!-- Edit Dialog -->
+    <consultation-dialog
+      v-if="dialogVisible"
+      :visible.sync="dialogVisible"
+      :form-data="currentData"
+      @success="getList"
+    />
   </div>
 </template>
 
@@ -274,9 +281,11 @@ import {
   deleteConsultation,
   withdrawConsultation,
 } from "@/api/consultation";
+import ConsultationDialog from "./ConsultationDialog";
 
 export default {
   name: "ConsultationList",
+  components: { ConsultationDialog },
   props: {
     type: {
       type: String,
@@ -323,6 +332,8 @@ export default {
         expertSelect: undefined,
       },
       isExpanded: false,
+      dialogVisible: false,
+      currentData: null,
     };
   },
   watch: {
@@ -372,6 +383,10 @@ export default {
       this.listQuery.page = val;
       this.getList();
     },
+    handleEdit(row) {
+      this.currentData = Object.assign({}, row);
+      this.dialogVisible = true;
+    },
     handleDelete(row) {
       this.$confirm("仅删除本次咨询订单记录?", "删除咨询订单", {
         confirmButtonText: "删除",
@@ -396,8 +411,8 @@ export default {
       this.$confirm("咨询专家将无法查看本次咨询订单", "撤回咨询", {
         confirmButtonText: "确定",
         cancelButtonText: "取消",
-        type: "success",
-        iconClass: "el-icon-success",
+        type: "success", // Using success type to show green icon if available or custom icon
+        iconClass: "el-icon-success", // Force success icon if supported or custom class
         customClass: "withdraw-confirm-dialog",
       })
         .then(() => {

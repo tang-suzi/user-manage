@@ -54,6 +54,7 @@ for (let i = 0; i < count; i++) {
       description: "@csentence(10, 30)",
       content: baseContent,
       image_uri,
+      hospital: "shanghai_xinhua",
     })
   );
 }
