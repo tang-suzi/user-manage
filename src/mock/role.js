@@ -55,13 +55,14 @@ export default {
   },
   // 增加
   createRole: (config) => {
-    const { name, description, status } = JSON.parse(config.body);
+    const { name, description, status, permissions } = JSON.parse(config.body);
     List.unshift({
       id: Mock.mock("@increment"),
       name,
       description,
       creator: "Admin", // 默认创建人
       status,
+      permissions,
       createTime: Mock.mock("@datetime"),
     });
     return {
@@ -71,12 +72,15 @@ export default {
   },
   // 修改
   updateRole: (config) => {
-    const { id, name, description, status } = JSON.parse(config.body);
+    const { id, name, description, status, permissions } = JSON.parse(
+      config.body
+    );
     const item = List.find((item) => item.id === id);
     if (item) {
       item.name = name;
       item.description = description;
       item.status = status;
+      item.permissions = permissions;
       return {
         code: 200,
         message: "编辑成功",
