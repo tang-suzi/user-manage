@@ -29,6 +29,8 @@ Mock.mock(/\/api\/user\/delete/, "post", userAPI.deleteUser);
 
 // 培训中心相关
 Mock.mock(/\/training\/video\/list/, "get", trainingAPI.getTrainingVideoList);
+Mock.mock(/\/training\/practice\/list/, "get", trainingAPI.getPracticeList);
+Mock.mock(/\/training\/evaluation\/list/, "get", trainingAPI.getEvaluationList);
 
 // 模拟接口
 Mock.mock(/\/api\/user\/login/, "post", {
