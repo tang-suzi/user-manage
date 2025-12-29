@@ -6,8 +6,8 @@
     :before-close="handleClose"
   >
     <el-form ref="form" :model="form" :rules="rules" label-width="110px">
-      <el-form-item label="机构名称" prop="orgName">
-        <el-input v-model="form.orgName" maxlength="20" />
+      <el-form-item label="机构名称" prop="name">
+        <el-input v-model="form.name" maxlength="20" />
       </el-form-item>
 
       <el-form-item label="管理员账号" prop="adminAccount">

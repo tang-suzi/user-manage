@@ -55,7 +55,7 @@
             编辑
           </el-button>
 
-          <el-button type="text" size="small" @click="handleToggle(row)">
+          <el-button type="text" size="small">
             {{ row.status === 1 ? "禁用" : "启用" }}
           </el-button>
 
@@ -125,10 +125,15 @@ export default {
     },
     fetchList() {
       this.loading = true;
-      getOrgList(this.query)
+      const params = {
+        name: this.query.orgName,
+        page: this.query.pageNum,
+        limit: this.query.pageSize,
+      };
+      getOrgList(params)
         .then((res) => {
-          this.list = res.list;
-          this.total = res.total;
+          this.list = res.data.items;
+          this.total = res.data.total;
         })
         .finally(() => {
           this.loading = false;
@@ -158,25 +163,11 @@ export default {
       this.currentRow = { ...row };
       this.dialogVisible = true;
     },
-    handleToggle(row) {
-      const text = row.status === "enabled" ? "禁用" : "启用";
-      this.$confirm(`确认${text}该机构？`, "提示").then(() => {
-        this.$api
-          .toggleOrgStatus({
-            orgId: row.orgId,
-            status: row.status === "enabled" ? "disabled" : "enabled",
-          })
-          .then(() => {
-            this.$message.success("操作成功");
-            this.fetchList();
-          });
-      });
-    },
     handleDelete(row) {
       this.$confirm("删除后数据不可恢复，是否继续？", "警告", {
         type: "warning",
       }).then(() => {
-        deleteOrg({ orgId: row.orgId }).then(() => {
+        deleteOrg({ id: row.id }).then(() => {
           this.$message.success("删除成功");
           this.fetchList();
         });
