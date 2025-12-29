@@ -94,7 +94,7 @@
 </template>
 <script>
 import OrgDialog from "./OrgDialog.vue";
-import { getOrgList } from "@/api/org";
+import { getOrgList, deleteOrg } from "@/api/org";
 
 export default {
   name: "InstitutionalManage",
@@ -176,7 +176,7 @@ export default {
       this.$confirm("删除后数据不可恢复，是否继续？", "警告", {
         type: "warning",
       }).then(() => {
-        this.$api.deleteOrg({ orgId: row.orgId }).then(() => {
+        deleteOrg({ orgId: row.orgId }).then(() => {
           this.$message.success("删除成功");
           this.fetchList();
         });

@@ -32,13 +32,17 @@
       <!-- 多选 -->
       <el-table-column type="selection" width="50" />
 
-      <el-table-column prop="roleId" label="角色ID" width="180" />
+      <el-table-column prop="id" label="角色ID" width="180" />
 
-      <el-table-column prop="roleName" label="角色名称" show-overflow-tooltip />
+      <el-table-column prop="name" label="角色名称" show-overflow-tooltip />
 
-      <el-table-column prop="roleDesc" label="角色描述" show-overflow-tooltip />
+      <el-table-column
+        prop="description"
+        label="角色描述"
+        show-overflow-tooltip
+      />
 
-      <el-table-column prop="creatorName" label="创建人姓名" width="120" />
+      <el-table-column prop="creator" label="创建人姓名" width="120" />
 
       <el-table-column prop="status" label="启用状态" width="100">
         <template slot-scope="{ row }">
@@ -80,12 +84,18 @@
       @size-change="handleSizeChange"
       @current-change="handlePageChange"
     />
-    <!-- 新建角色 Dialog -->
-    <role-dialog :visible.sync="dialogVisible" :mode="dialogMode" />
+    <role-dialog
+      :visible.sync="dialogVisible"
+      :mode="dialogMode"
+      :rowData="currentRow"
+      @success="fetchList"
+    />
   </div>
 </template>
 <script>
 import RoleDialog from "./RoleDialog";
+import { getRoleList, deleteRole } from "@/api/role";
+
 export default {
   name: "RoleManage",
   components: {
@@ -104,6 +114,7 @@ export default {
       },
       dialogVisible: false,
       dialogMode: "create",
+      currentRow: {},
     };
   },
   created() {
@@ -112,16 +123,21 @@ export default {
   methods: {
     /** 获取角色列表 */
     fetchList() {
-      // this.loading = true;
-      // this.$api
-      //   .getRoleList(this.query)
-      //   .then((res) => {
-      //     this.list = res.list;
-      //     this.total = res.total;
-      //   })
-      //   .finally(() => {
-      //     this.loading = false;
-      //   });
+      this.loading = true;
+      const params = {
+        keyword: this.query.keyword,
+        page: this.query.pageNum,
+        limit: this.query.pageSize,
+      };
+      getRoleList(params)
+        .then((res) => {
+          this.list = res.data.items;
+          this.total = res.data.total;
+          console.log(this.list);
+        })
+        .finally(() => {
+          this.loading = false;
+        });
     },
 
     /** 查询 */
@@ -133,14 +149,15 @@ export default {
     /** 新建角色 */
     handleCreate() {
       this.dialogMode = "create";
+      this.currentRow = {};
       this.dialogVisible = true;
     },
 
     /** 编辑角色 */
     handleEdit(row) {
-      // 🚩 预留：后续接编辑角色 Dialog
-      console.log("编辑角色：", row);
-      this.$message.info("编辑角色功能待接入");
+      this.dialogMode = "edit";
+      this.currentRow = { ...row };
+      this.dialogVisible = true;
     },
 
     /** 删除角色 */
@@ -148,7 +165,7 @@ export default {
       this.$confirm("删除后不可恢复，是否继续？", "警告", {
         type: "warning",
       }).then(() => {
-        this.$api.deleteRole({ roleId: row.roleId }).then(() => {
+        deleteRole({ id: row.id }).then(() => {
           this.$message.success("删除成功");
           this.fetchList();
         });
@@ -174,3 +191,16 @@ export default {
   },
 };
 </script>
+<style scoped>
+.query-form {
+  display: flex;
+  justify-content: space-between;
+  .el-input {
+    width: 400px;
+  }
+}
+.pagination {
+  margin-top: 20px;
+  text-align: center;
+}
+</style>
