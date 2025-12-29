@@ -33,6 +33,14 @@ const routes = [
           title: "用户管理",
         },
       },
+      {
+        path: "/trainingCenter",
+        name: "trainingCenter",
+        component: () => import("@/views/TrainingCenter"),
+        meta: {
+          title: "培训中心",
+        },
+      },
     ],
   },
 ];

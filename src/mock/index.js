@@ -2,6 +2,7 @@ import Mock from "mockjs";
 import orgAPI from "./org";
 import roleAPI from "./role";
 import userAPI from "./user";
+import trainingAPI from "./training";
 
 // 设置延时，模拟网络请求延时
 Mock.setup({
@@ -25,6 +26,9 @@ Mock.mock(/\/api\/user\/list/, "get", userAPI.getUserList);
 Mock.mock(/\/api\/user\/add/, "post", userAPI.createUser);
 Mock.mock(/\/api\/user\/update/, "post", userAPI.updateUser);
 Mock.mock(/\/api\/user\/delete/, "post", userAPI.deleteUser);
+
+// 培训中心相关
+Mock.mock(/\/training\/video\/list/, "get", trainingAPI.getTrainingVideoList);
 
 // 模拟接口
 Mock.mock(/\/api\/user\/login/, "post", {
