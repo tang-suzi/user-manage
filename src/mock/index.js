@@ -4,6 +4,7 @@ import roleAPI from "./role";
 import userAPI from "./user";
 import trainingAPI from "./training";
 import knowledgeAPI from "./knowledge";
+import consultationAPI from "./consultation";
 
 // 设置延时，模拟网络请求延时
 Mock.setup({
@@ -35,6 +36,33 @@ Mock.mock(/\/training\/evaluation\/list/, "get", trainingAPI.getEvaluationList);
 
 // 知识库检索相关
 Mock.mock(/\/api\/knowledge\/list/, "get", knowledgeAPI.getKnowledgeList);
+
+// 专家咨询相关
+Mock.mock(
+  /\/api\/consultation\/list/,
+  "get",
+  consultationAPI.getConsultationList
+);
+Mock.mock(
+  /\/api\/consultation\/create/,
+  "post",
+  consultationAPI.createConsultation
+);
+Mock.mock(
+  /\/api\/consultation\/update/,
+  "post",
+  consultationAPI.updateConsultation
+);
+Mock.mock(
+  /\/api\/consultation\/delete/,
+  "post",
+  consultationAPI.deleteConsultation
+);
+Mock.mock(
+  /\/api\/consultation\/withdraw/,
+  "post",
+  consultationAPI.withdrawConsultation
+);
 
 // 模拟接口
 Mock.mock(/\/api\/user\/login/, "post", {

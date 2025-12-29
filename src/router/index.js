@@ -49,6 +49,14 @@ const routes = [
           title: "知识库检索",
         },
       },
+      {
+        path: "/expertConsultation",
+        name: "expertConsultation",
+        component: () => import("@/views/ExpertConsultation/index.vue"),
+        meta: {
+          title: "专家咨询",
+        },
+      },
     ],
   },
 ];
