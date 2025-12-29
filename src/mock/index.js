@@ -1,6 +1,7 @@
 import Mock from "mockjs";
 import orgAPI from "./org";
 import roleAPI from "./role";
+import userAPI from "./user";
 
 // 设置延时，模拟网络请求延时
 Mock.setup({
@@ -19,6 +20,12 @@ Mock.mock(/\/api\/role\/add/, "post", roleAPI.createRole);
 Mock.mock(/\/api\/role\/update/, "post", roleAPI.updateRole);
 Mock.mock(/\/api\/role\/delete/, "post", roleAPI.deleteRole);
 
+// 用户管理相关
+Mock.mock(/\/api\/user\/list/, "get", userAPI.getUserList);
+Mock.mock(/\/api\/user\/add/, "post", userAPI.createUser);
+Mock.mock(/\/api\/user\/update/, "post", userAPI.updateUser);
+Mock.mock(/\/api\/user\/delete/, "post", userAPI.deleteUser);
+
 // 模拟接口
 Mock.mock(/\/api\/user\/login/, "post", {
   code: 200,
@@ -30,21 +37,6 @@ Mock.mock(/\/api\/user\/login/, "post", {
       avatar: "https://wpimg.wallstcn.com/f.gif",
     },
   },
-});
-
-// 模拟获取用户列表
-Mock.mock(/\/api\/user\/list/, "get", {
-  code: 200,
-  message: "获取成功",
-  "data|10": [
-    {
-      "id|+1": 1,
-      name: "@cname",
-      "age|18-60": 1,
-      address: "@county(true)",
-      date: "@date('YYYY-MM-dd')",
-    },
-  ],
 });
 
 export default Mock;

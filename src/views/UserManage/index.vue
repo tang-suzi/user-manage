@@ -1,11 +1,11 @@
 <template>
-  <div class="role-page">
+  <div class="user-page">
     <!-- 查询区 -->
     <el-form :inline="true" :model="query" class="query-form">
       <el-form-item>
         <el-input
           v-model="query.keyword"
-          placeholder="请输入角色名称 / 创建人"
+          placeholder="搜索账号、用户姓名"
           maxlength="20"
           clearable
         >
@@ -18,55 +18,58 @@
       </el-form-item>
 
       <el-form-item>
-        <el-button type="primary" @click="handleCreate"> 新建角色 </el-button>
+        <el-button type="default" @click="handleCreate"> 新建用户 </el-button>
       </el-form-item>
     </el-form>
 
     <!-- 表格 -->
-    <el-table
-      :data="list"
-      v-loading="loading"
-      @selection-change="handleSelectionChange"
-      class="table"
-    >
-      <!-- 多选 -->
-      <el-table-column type="selection" width="50" />
+    <div class="table-container">
+      <el-table
+        :data="list"
+        v-loading="loading"
+        @selection-change="handleSelectionChange"
+        class="table"
+        height="100%"
+      >
+        <!-- 多选 -->
+        <el-table-column type="selection" width="50" />
 
-      <el-table-column prop="roleId" label="角色ID" width="180" />
+        <el-table-column prop="account" label="账号" width="120" />
 
-      <el-table-column prop="roleName" label="角色名称" show-overflow-tooltip />
+        <el-table-column prop="name" label="用户姓名" width="120" />
 
-      <el-table-column prop="roleDesc" label="角色描述" show-overflow-tooltip />
+        <el-table-column prop="orgName" label="机构" show-overflow-tooltip />
 
-      <el-table-column prop="creatorName" label="创建人姓名" width="120" />
+        <el-table-column prop="roleName" label="角色" width="120" />
 
-      <el-table-column prop="status" label="启用状态" width="100">
-        <template slot-scope="{ row }">
-          <el-tag :type="row.status === 'enabled' ? 'success' : 'info'">
-            {{ row.status === "enabled" ? "启用" : "禁用" }}
-          </el-tag>
-        </template>
-      </el-table-column>
+        <el-table-column prop="creator" label="创建人姓名" width="120" />
 
-      <el-table-column prop="createTime" label="创建时间" width="160" />
+        <el-table-column prop="status" label="启动状态" width="100">
+          <template slot-scope="{ row }">
+            {{ row.status === 1 ? "启动" : "禁用" }}
+          </template>
+        </el-table-column>
 
-      <el-table-column label="操作" width="160" fixed="right">
-        <template slot-scope="{ row }">
-          <el-button type="text" size="small" @click="handleEdit(row)">
-            编辑
-          </el-button>
+        <el-table-column prop="createTime" label="创建时间" width="160" />
 
-          <el-button
-            type="text"
-            size="small"
-            style="color: red"
-            @click="handleDelete(row)"
-          >
-            删除
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+        <el-table-column label="操作" width="160" fixed="right">
+          <template slot-scope="{ row }">
+            <el-button type="text" size="small" @click="handleEdit(row)">
+              编辑
+            </el-button>
+
+            <el-button
+              type="text"
+              size="small"
+              style="color: #409eff"
+              @click="handleDelete(row)"
+            >
+              删除
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
 
     <!-- 分页 -->
     <el-pagination
@@ -80,14 +83,23 @@
       @size-change="handleSizeChange"
       @current-change="handlePageChange"
     />
-    <!-- 新建角色 Dialog -->
-    <user-dialog :visible.sync="dialogVisible" :mode="dialogMode" />
+
+    <!-- 新建/编辑用户 Dialog -->
+    <user-dialog
+      :visible.sync="dialogVisible"
+      :mode="dialogMode"
+      :row-data="currentRow"
+      @success="fetchList"
+    />
   </div>
 </template>
+
 <script>
 import UserDialog from "./UserDialog";
+import { getUserList, deleteUser } from "@/api/user";
+
 export default {
-  name: "RoleManage",
+  name: "UserManage",
   components: {
     UserDialog,
   },
@@ -104,24 +116,28 @@ export default {
       },
       dialogVisible: false,
       dialogMode: "create",
+      currentRow: {},
     };
   },
   created() {
     this.fetchList();
   },
   methods: {
-    /** 获取角色列表 */
+    /** 获取用户列表 */
     fetchList() {
-      // this.loading = true;
-      // this.$api
-      //   .getRoleList(this.query)
-      //   .then((res) => {
-      //     this.list = res.list;
-      //     this.total = res.total;
-      //   })
-      //   .finally(() => {
-      //     this.loading = false;
-      //   });
+      this.loading = true;
+      getUserList({
+        keyword: this.query.keyword,
+        page: this.query.pageNum,
+        limit: this.query.pageSize,
+      })
+        .then((res) => {
+          this.list = res.data.items;
+          this.total = res.data.total;
+        })
+        .finally(() => {
+          this.loading = false;
+        });
     },
 
     /** 查询 */
@@ -130,25 +146,28 @@ export default {
       this.fetchList();
     },
 
-    /** 新建角色 */
+    /** 新建用户 */
     handleCreate() {
       this.dialogMode = "create";
+      this.currentRow = {};
       this.dialogVisible = true;
     },
 
-    /** 编辑角色 */
+    /** 编辑用户 */
     handleEdit(row) {
-      // 🚩 预留：后续接编辑角色 Dialog
-      console.log("编辑角色：", row);
-      this.$message.info("编辑角色功能待接入");
+      this.dialogMode = "edit";
+      this.currentRow = row;
+      this.dialogVisible = true;
     },
 
-    /** 删除角色 */
+    /** 删除用户 */
     handleDelete(row) {
-      this.$confirm("删除后不可恢复，是否继续？", "警告", {
+      this.$confirm("用户删除后不可恢复，确认删除？", "删除用户", {
         type: "warning",
+        confirmButtonText: "删除",
+        cancelButtonText: "取消",
       }).then(() => {
-        this.$api.deleteRole({ roleId: row.roleId }).then(() => {
+        deleteUser({ id: row.id }).then(() => {
           this.$message.success("删除成功");
           this.fetchList();
         });
@@ -174,21 +193,28 @@ export default {
   },
 };
 </script>
+
 <style lang="scss" scoped>
-.role-page {
-  flex: 1;
+.user-page {
+  padding: 20px;
+  background-color: #fff;
+  height: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 .query-form {
+  display: flex;
+  justify-content: space-between;
   flex-shrink: 0;
+}
+.table-container {
+  flex: 1;
+  overflow: hidden;
 }
 .pagination {
+  margin-top: 20px;
+  text-align: center;
   flex-shrink: 0;
-}
-.table {
-  flex: 1;
-  overflow-y: auto;
 }
 </style>

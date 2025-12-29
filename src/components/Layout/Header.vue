@@ -1,6 +1,28 @@
 <template>
-  <el-header class="header">Header</el-header>
+  <el-header class="header">
+    <div class="header-left">
+      <!-- 面包屑或其他左侧内容，暂时留空或放标题 -->
+      <span class="page-title"></span>
+    </div>
+    <div class="header-right">
+      <el-dropdown trigger="click">
+        <div class="user-info">
+          <el-avatar
+            size="small"
+            src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png"
+          ></el-avatar>
+          <span class="user-name">Admin</span>
+          <i class="el-icon-caret-bottom"></i>
+        </div>
+        <el-dropdown-menu slot="dropdown">
+          <el-dropdown-item>个人中心</el-dropdown-item>
+          <el-dropdown-item divided>退出登录</el-dropdown-item>
+        </el-dropdown-menu>
+      </el-dropdown>
+    </div>
+  </el-header>
 </template>
+
 <script>
 export default {
   name: "HeaderComponent",
@@ -9,9 +31,40 @@ export default {
   },
 };
 </script>
+
 <style lang="scss" scoped>
 .header {
-  text-align: right;
-  line-height: 60px;
+  background-color: #fff;
+  border-bottom: 1px solid #dcdfe6;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+  height: 60px;
+  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    .page-title {
+      font-size: 18px;
+      font-weight: bold;
+      color: #303133;
+    }
+  }
+
+  .header-right {
+    .user-info {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      .user-name {
+        margin-left: 8px;
+        margin-right: 4px;
+        font-size: 14px;
+        color: #606266;
+      }
+    }
+  }
 }
 </style>

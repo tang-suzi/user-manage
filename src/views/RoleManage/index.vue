@@ -23,54 +23,57 @@
     </el-form>
 
     <!-- 表格 -->
-    <el-table
-      :data="list"
-      border
-      v-loading="loading"
-      @selection-change="handleSelectionChange"
-    >
-      <!-- 多选 -->
-      <el-table-column type="selection" width="50" />
+    <div class="table-container">
+      <el-table
+        :data="list"
+        border
+        v-loading="loading"
+        @selection-change="handleSelectionChange"
+        height="100%"
+      >
+        <!-- 多选 -->
+        <el-table-column type="selection" width="50" />
 
-      <el-table-column prop="id" label="角色ID" width="180" />
+        <el-table-column prop="id" label="角色ID" width="180" />
 
-      <el-table-column prop="name" label="角色名称" show-overflow-tooltip />
+        <el-table-column prop="name" label="角色名称" show-overflow-tooltip />
 
-      <el-table-column
-        prop="description"
-        label="角色描述"
-        show-overflow-tooltip
-      />
+        <el-table-column
+          prop="description"
+          label="角色描述"
+          show-overflow-tooltip
+        />
 
-      <el-table-column prop="creator" label="创建人姓名" width="120" />
+        <el-table-column prop="creator" label="创建人姓名" width="120" />
 
-      <el-table-column prop="status" label="启用状态" width="100">
-        <template slot-scope="{ row }">
-          <el-tag :type="row.status === 'enabled' ? 'success' : 'info'">
-            {{ row.status === "enabled" ? "启用" : "禁用" }}
-          </el-tag>
-        </template>
-      </el-table-column>
+        <el-table-column prop="status" label="启用状态" width="100">
+          <template slot-scope="{ row }">
+            <el-tag :type="row.status === 'enabled' ? 'success' : 'info'">
+              {{ row.status === "enabled" ? "启用" : "禁用" }}
+            </el-tag>
+          </template>
+        </el-table-column>
 
-      <el-table-column prop="createTime" label="创建时间" width="160" />
+        <el-table-column prop="createTime" label="创建时间" width="160" />
 
-      <el-table-column label="操作" width="160" fixed="right">
-        <template slot-scope="{ row }">
-          <el-button type="text" size="small" @click="handleEdit(row)">
-            编辑
-          </el-button>
+        <el-table-column label="操作" width="160" fixed="right">
+          <template slot-scope="{ row }">
+            <el-button type="text" size="small" @click="handleEdit(row)">
+              编辑
+            </el-button>
 
-          <el-button
-            type="text"
-            size="small"
-            style="color: red"
-            @click="handleDelete(row)"
-          >
-            删除
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+            <el-button
+              type="text"
+              size="small"
+              style="color: red"
+              @click="handleDelete(row)"
+            >
+              删除
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
 
     <!-- 分页 -->
     <el-pagination
@@ -191,8 +194,16 @@ export default {
   },
 };
 </script>
-<style scoped>
+<style lang="scss" scoped>
+.role-page {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 100%;
+}
 .query-form {
+  flex-shrink: 0;
   display: flex;
   justify-content: space-between;
   .el-input {
@@ -200,7 +211,12 @@ export default {
   }
 }
 .pagination {
+  flex-shrink: 0;
   margin-top: 20px;
   text-align: center;
+}
+.table-container {
+  flex: 1;
+  overflow: hidden;
 }
 </style>
