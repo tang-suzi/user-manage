@@ -41,6 +41,14 @@ const routes = [
           title: "培训中心",
         },
       },
+      {
+        path: "/knowledge",
+        name: "knowledge",
+        component: () => import("@/views/Knowledge/index.vue"),
+        meta: {
+          title: "知识库检索",
+        },
+      },
     ],
   },
 ];
