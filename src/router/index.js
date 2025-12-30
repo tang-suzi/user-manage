@@ -57,6 +57,16 @@ const routes = [
           title: "专家咨询",
         },
       },
+      {
+        path: "/expertConsultation/detail/:id",
+        name: "expertConsultationDetail",
+        component: () =>
+          import("@/views/ExpertConsultation/CaseAnalysisDetail.vue"),
+        meta: {
+          title: "病例分析详情",
+          hidden: true,
+        },
+      },
     ],
   },
 ];

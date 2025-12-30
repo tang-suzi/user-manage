@@ -245,7 +245,9 @@
           <el-button type="text" size="small" @click="handleWithdraw(row)"
             >撤回</el-button
           >
-          <el-button type="text" size="small">查看</el-button>
+          <el-button type="text" size="small" @click="handleView(row)"
+            >查看</el-button
+          >
           <el-button type="text" size="small">再次咨询</el-button>
           <el-button type="text" size="small">拒绝原因</el-button>
         </template>
@@ -427,6 +429,12 @@ export default {
         .catch(() => {
           // Cancelled
         });
+    },
+    handleView(row) {
+      this.$router.push({
+        name: "expertConsultationDetail",
+        params: { id: row.id },
+      });
     },
   },
 };
