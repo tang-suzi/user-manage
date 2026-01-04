@@ -69,6 +69,14 @@ const routes = [
       },
     ],
   },
+  {
+    path: "/login",
+    name: "Login",
+    component: () => import("@/views/Login/index.vue"),
+    meta: {
+      hidden: true,
+    },
+  },
 ];
 
 const router = new VueRouter({

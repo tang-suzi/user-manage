@@ -2,7 +2,7 @@ import axios from "axios";
 import { Message } from "element-ui";
 
 const service = axios.create({
-  baseURL: "", // 请求地址暂时用空链接替代
+  baseURL: "https://120.26.23.6", // 请求地址暂时用空链接替代
   timeout: 5000, // 超时时间5000ms
 });
 
