@@ -41,6 +41,7 @@
 </template>
 
 <script>
+import { aesEncrypt } from "@/utils/encryptAES";
 import { login } from "@/api/login";
 
 export default {
@@ -60,11 +61,23 @@ export default {
   },
   methods: {
     handleLogin() {
-      this.$refs.loginForm.validate((valid) => {
+      this.$refs.loginForm.validate(async (valid) => {
         if (valid) {
           this.loading = true;
-          let res = login(this.loginForm);
-          console.log(res);
+          try {
+            this.loginForm.password = aesEncrypt(this.loginForm.password);
+            let { accessToken, userInfo, tokenType } = await login(
+              this.loginForm
+            );
+            localStorage.setItem("token", `${tokenType} ${accessToken}`);
+            localStorage.setItem("userInfo", JSON.stringify(userInfo));
+            this.$message.success("登录成功");
+            this.$router.push("/");
+          } catch (error) {
+            this.$message.error(error.message);
+          } finally {
+            this.loading = false;
+          }
           // login(this.loginForm)
           //   .then((response) => {
           //     this.loading = false;

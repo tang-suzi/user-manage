@@ -36,13 +36,13 @@
 
         <el-table-column prop="account" label="账号" width="120" />
 
-        <el-table-column prop="name" label="用户姓名" width="120" />
+        <el-table-column prop="userName" label="用户姓名" width="120" />
 
-        <el-table-column prop="orgName" label="机构" show-overflow-tooltip />
+        <el-table-column prop="orgId" label="机构" show-overflow-tooltip />
 
-        <el-table-column prop="roleName" label="角色" width="120" />
+        <el-table-column prop="isSysAdmin" label="角色" width="120" />
 
-        <el-table-column prop="creator" label="创建人姓名" width="120" />
+        <el-table-column prop="createBy" label="创建人姓名" width="120" />
 
         <el-table-column prop="status" label="启动状态" width="100">
           <template slot-scope="{ row }">
@@ -86,6 +86,8 @@
 
     <!-- 新建/编辑用户 Dialog -->
     <user-dialog
+      ref="userDialog"
+      v-if="dialogVisible"
       :visible.sync="dialogVisible"
       :mode="dialogMode"
       :row-data="currentRow"
@@ -110,7 +112,10 @@ export default {
       total: 0,
       selectedRows: [],
       query: {
+        userName: "",
+        account: "",
         keyword: "",
+        orgId: "",
         pageNum: 1,
         pageSize: 20,
       },
@@ -124,20 +129,24 @@ export default {
   },
   methods: {
     /** 获取用户列表 */
-    fetchList() {
+    async fetchList() {
       this.loading = true;
-      getUserList({
-        keyword: this.query.keyword,
-        page: this.query.pageNum,
-        limit: this.query.pageSize,
-      })
-        .then((res) => {
-          this.list = res.data.items;
-          this.total = res.data.total;
-        })
-        .finally(() => {
-          this.loading = false;
+      try {
+        let { records, total } = await getUserList({
+          userName: this.query.userName,
+          account: this.query.account,
+          keyword: this.query.keyword,
+          orgId: this.query.orgId,
+          page: this.query.pageNum,
+          limit: this.query.pageSize,
         });
+        this.list = records;
+        this.total = total;
+      } catch (error) {
+        this.$message.error(error.message);
+      } finally {
+        this.loading = false;
+      }
     },
 
     /** 查询 */
@@ -166,12 +175,16 @@ export default {
         type: "warning",
         confirmButtonText: "删除",
         cancelButtonText: "取消",
-      }).then(() => {
-        deleteUser({ id: row.id }).then(() => {
-          this.$message.success("删除成功");
-          this.fetchList();
+      })
+        .then(() => {
+          deleteUser({ userId: row.userId }).then(() => {
+            this.$message.success("删除成功");
+            this.fetchList();
+          });
+        })
+        .catch(() => {
+          this.$message.info("删除操作已取消");
         });
-      });
     },
 
     /** 多选 */

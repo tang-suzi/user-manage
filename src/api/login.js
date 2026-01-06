@@ -2,8 +2,8 @@ import request from "@/request";
 
 export function login(data) {
   return request({
-    url: "/train/auth/login",
+    url: "/train/train/auth/login",
     method: "post",
-    data,
+    params: { ...data },
   });
 }

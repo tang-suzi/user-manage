@@ -4,7 +4,7 @@
     <div class="search-bar">
       <el-input
         v-model="keyword"
-        placeholder="搜索异常核型与知识库"
+        placeholder="搜索异常核型知识库"
         class="search-input"
         clearable
         @keyup.enter.native="handleSearch"
@@ -19,7 +19,7 @@
     </div>
 
     <!-- Results Area -->
-    <div class="results-area" v-if="hasSearched">
+    <div class="results-area" v-if="list.length > 0">
       <div class="results-header">共 {{ total }} 条结果</div>
 
       <div class="table-container">
@@ -30,10 +30,16 @@
           v-loading="loading"
           header-cell-class-name="table-header"
         >
-          <el-table-column type="index" label="条目" width="80" align="center">
+          <el-table-column
+            type="index"
+            prop="id"
+            label="条目"
+            width="80"
+            align="center"
+          >
           </el-table-column>
           <el-table-column
-            prop="karyotype"
+            prop="exprssion"
             label="异常核型"
             width="150"
             align="center"
@@ -47,15 +53,15 @@
           >
           </el-table-column>
           <el-table-column
-            prop="gene"
+            prop="associatedGenes"
             label="核心关联基因"
             width="120"
             align="center"
           >
           </el-table-column>
           <el-table-column
-            prop="sourceFunction"
-            label="相关蛋白及其功能"
+            prop="protein"
+            label="相关蛋白及功能"
             min-width="200"
             align="left"
             header-align="center"
@@ -70,35 +76,36 @@
           >
           </el-table-column>
           <el-table-column
-            prop="prognosis"
+            prop="proInter"
             label="预后与干预"
             min-width="200"
             align="left"
             header-align="center"
           >
           </el-table-column>
-          <el-table-column label="相关文献预览" min-width="150" align="center">
+          <el-table-column
+            label="相关文献简述"
+            prop="autoLitAbstract"
+            min-width="150"
+            align="center"
+          >
             <template slot-scope="scope">
-              <div>{{ scope.row.literature }}</div>
+              <div>{{ scope.row.autoLitAbstract || "-" }}</div>
             </template>
           </el-table-column>
           <el-table-column label="参考文献" width="100" align="center">
             <template slot-scope="scope">
-              <a
-                :href="scope.row.referenceFile"
-                target="_blank"
-                class="pdf-link"
-              >
+              <div @click="handleDownload(scope.row)" class="pdf-link">
                 <i class="el-icon-document pdf-icon"></i>
                 <div>参考文献</div>
-              </a>
+              </div>
             </template>
           </el-table-column>
         </el-table>
       </div>
 
       <!-- Pagination -->
-      <div class="pagination">
+      <!-- <div class="pagination">
         <el-pagination
           @size-change="handleSizeChange"
           @current-change="handleCurrentChange"
@@ -109,18 +116,18 @@
           :total="total"
         >
         </el-pagination>
-      </div>
+      </div> -->
     </div>
 
     <!-- Empty State / Initial State -->
-    <div class="empty-state" v-else-if="searchedButNoResult">
+    <div class="empty-state" v-else>
       <div class="no-result-text">未匹配到结果</div>
     </div>
   </div>
 </template>
 
 <script>
-import { getKnowledgeList } from "@/api/knowledge";
+import { getKnowledgeList, downloadKnowledgePdf } from "@/api/knowledge";
 
 export default {
   name: "KnowledgeBase",
@@ -137,28 +144,52 @@ export default {
     };
   },
   methods: {
+    async handleDownload(row) {
+      try {
+        let blob = await downloadKnowledgePdf({ id: row.id });
+        console.log(blob);
+        blob = await blob.arrayBuffer();
+        // if (blob.type !== "application/pdf") {
+        //   const text = await blob.text();
+        //   console.error("下载失败，后端返回：", text);
+        //   return;
+        // }
+
+        const url = window.URL.createObjectURL(blob);
+
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "培训资料.pdf";
+        document.body.appendChild(link);
+        link.click();
+
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error(error);
+      }
+    },
     handleSearch() {
       if (!this.keyword) return;
       this.page = 1;
       this.fetchData();
     },
-    fetchData() {
+    async fetchData() {
       this.loading = true;
-      getKnowledgeList({
-        keyword: this.keyword,
-        page: this.page,
-        limit: this.limit,
-      })
-        .then((res) => {
-          this.list = res.data.items;
-          this.total = res.data.total;
-          this.loading = false;
-          this.hasSearched = true;
-          this.searchedButNoResult = this.total === 0;
-        })
-        .catch(() => {
-          this.loading = false;
+      try {
+        let { records, total } = await getKnowledgeList({
+          keyword: this.keyword,
+          page: this.page,
+          size: this.limit,
         });
+        this.list = records || [];
+        this.total = total || 0;
+        console.log(this.list, "list");
+      } catch (error) {
+        console.error(error);
+      } finally {
+        this.loading = false;
+      }
     },
     handleSizeChange(val) {
       this.limit = val;

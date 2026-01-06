@@ -348,13 +348,22 @@ export default {
     this.getList();
   },
   methods: {
-    getList() {
+    async getList() {
       this.listLoading = true;
-      getConsultationList(this.listQuery).then((response) => {
-        this.list = response.data.items;
-        this.total = response.data.total;
-        this.listLoading = false;
-      });
+      try {
+        let res = await getConsultationList(this.listQuery);
+        console.log(res);
+      } catch (error) {
+        this.$message({
+          type: "error",
+          message: "获取咨询订单列表失败",
+        });
+      }
+      // getConsultationList(this.listQuery).then((response) => {
+      //   this.list = response.data.items;
+      //   this.total = response.data.total;
+      //   this.listLoading = false;
+      // });
     },
     handleFilter() {
       this.listQuery.page = 1;

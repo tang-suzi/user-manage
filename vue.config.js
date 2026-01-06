@@ -8,4 +8,25 @@ module.exports = defineConfig({
   //     },
   //   },
   // },
+  devServer: {
+    historyApiFallback: true,
+    proxy: {
+      "/train": {
+        target: "https://120.26.23.6",
+        changeOrigin: true,
+        secure: false,
+        pathRewrite: {
+          "^/train": "",
+        },
+      },
+      "/search": {
+        target: "https://120.26.23.6",
+        changeOrigin: true,
+        secure: false,
+        pathRewrite: {
+          "^/search": "",
+        },
+      },
+    },
+  },
 });

@@ -67,6 +67,16 @@ const routes = [
           hidden: true,
         },
       },
+      {
+        path: "/training/quality-evaluation/detail",
+        name: "qualityEvaluationDetail",
+        component: () =>
+          import("@/views/TrainingCenter/QualityEvaluationDetail.vue"),
+        meta: {
+          title: "多中心质量评价详情",
+          hidden: true,
+        },
+      },
     ],
   },
   {
@@ -80,7 +90,7 @@ const routes = [
 ];
 
 const router = new VueRouter({
-  mode: "history",
+  mode: "hash",
   base: process.env.BASE_URL,
   routes,
 });

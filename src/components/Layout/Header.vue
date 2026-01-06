@@ -5,18 +5,15 @@
       <span class="page-title"></span>
     </div>
     <div class="header-right">
-      <el-dropdown trigger="click">
+      <el-dropdown trigger="click" @command="handleCommand">
         <div class="user-info">
-          <el-avatar
-            size="small"
-            src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png"
-          ></el-avatar>
-          <span class="user-name">Admin</span>
+          <span class="user-name">{{ username }}</span>
           <i class="el-icon-caret-bottom"></i>
         </div>
+        <!-- 下拉菜单 -->
+        <!-- 添加退出登录事件 -->
         <el-dropdown-menu slot="dropdown">
-          <el-dropdown-item>个人中心</el-dropdown-item>
-          <el-dropdown-item divided>退出登录</el-dropdown-item>
+          <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
         </el-dropdown-menu>
       </el-dropdown>
     </div>
@@ -27,7 +24,25 @@
 export default {
   name: "HeaderComponent",
   data() {
-    return {};
+    return {
+      username: "",
+    };
+  },
+  mounted() {
+    const userInfo = JSON.parse(localStorage.getItem("userInfo"));
+    this.username = userInfo?.username || "用户";
+    console.log(userInfo);
+  },
+  methods: {
+    handleCommand(command) {
+      console.log(command);
+      if (command === "logout") {
+        console.log("退出登录");
+        localStorage.removeItem("token");
+        localStorage.removeItem("userInfo");
+        this.$router.push("/login");
+      }
+    },
   },
 };
 </script>

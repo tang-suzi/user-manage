@@ -3,7 +3,7 @@ import request from "@/request";
 // 获取机构列表
 export function getOrgList(params) {
   return request({
-    url: "/api/org/list",
+    url: "/train/train/sys/org/page",
     method: "get",
     params,
   });
@@ -12,7 +12,7 @@ export function getOrgList(params) {
 // 新建机构
 export function addOrg(data) {
   return request({
-    url: "/api/org/add",
+    url: "/train/train/sys/org/add",
     method: "post",
     data,
   });
@@ -21,17 +21,16 @@ export function addOrg(data) {
 // 编辑机构
 export function updateOrg(data) {
   return request({
-    url: "/api/org/update",
-    method: "post",
+    url: "/train/train/sys/org/edit",
+    method: "put",
     data,
   });
 }
 
 // 删除机构
-export function deleteOrg(data) {
+export function deleteOrg({ orgId }) {
   return request({
-    url: "/api/org/delete",
-    method: "post",
-    data,
+    url: "/train/train/sys/org/delete/" + orgId,
+    method: "delete",
   });
 }

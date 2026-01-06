@@ -28,10 +28,14 @@
         @selection-change="handleSelectionChange"
         height="100%"
       >
-        <el-table-column type="selection" width="55"> </el-table-column>
-        <el-table-column prop="id" label="机构ID" width="180" />
+        <!-- <el-table-column type="selection" width="55"> </el-table-column> -->
+        <el-table-column prop="orgId" label="机构ID" width="180" />
 
-        <el-table-column prop="name" label="机构名称" show-overflow-tooltip />
+        <el-table-column
+          prop="orgName"
+          label="机构名称"
+          show-overflow-tooltip
+        />
 
         <el-table-column
           prop="adminAccount"
@@ -49,7 +53,15 @@
           </template>
         </el-table-column>
 
-        <el-table-column prop="createTime" label="创建时间" width="160" />
+        <el-table-column prop="createTime" label="创建时间" width="160">
+          <template slot-scope="{ row }">
+            {{
+              row.createTime
+                ? dayjs(row.createTime).format("YYYY-MM-DD HH:mm:ss")
+                : "--"
+            }}
+          </template>
+        </el-table-column>
 
         <el-table-column label="操作" width="200" fixed="right">
           <template slot-scope="{ row }">
@@ -57,9 +69,9 @@
               编辑
             </el-button>
 
-            <el-button type="text" size="small">
+            <!-- <el-button type="text" size="small">
               {{ row.status === 1 ? "禁用" : "启用" }}
-            </el-button>
+            </el-button> -->
 
             <el-button
               type="text"
@@ -88,6 +100,7 @@
 
     <!-- 弹窗 -->
     <org-dialog
+      v-if="dialogVisible"
       :visible.sync="dialogVisible"
       :mode="dialogMode"
       :row-data="currentRow"
@@ -96,6 +109,7 @@
   </div>
 </template>
 <script>
+import dayjs from "dayjs";
 import OrgDialog from "./OrgDialog.vue";
 import { getOrgList, deleteOrg } from "@/api/org";
 
@@ -104,6 +118,7 @@ export default {
   components: { OrgDialog },
   data() {
     return {
+      dayjs,
       loading: false,
       list: [],
       total: 0,
@@ -126,21 +141,24 @@ export default {
     handleSelectionChange(val) {
       console.log(val);
     },
-    fetchList() {
+    async fetchList() {
       this.loading = true;
       const params = {
-        name: this.query.orgName,
-        page: this.query.pageNum,
-        limit: this.query.pageSize,
+        orgName: this.query.orgName,
+        // adminAccount: this.query.adminAccount,
+        // adminName: this.query.adminName,
+        pageNum: this.query.pageNum,
+        pageSize: this.query.pageSize,
       };
-      getOrgList(params)
-        .then((res) => {
-          this.list = res.data.items;
-          this.total = res.data.total;
-        })
-        .finally(() => {
-          this.loading = false;
-        });
+      try {
+        const { total, records } = await getOrgList(params);
+        this.list = records;
+        this.total = total;
+      } catch (error) {
+        this.$message.error(error.message || "获取机构列表失败");
+      } finally {
+        this.loading = false;
+      }
     },
     handleSearch() {
       this.query.pageNum = 1;
@@ -165,16 +183,29 @@ export default {
       this.dialogMode = "edit";
       this.currentRow = { ...row };
       this.dialogVisible = true;
+      console.log(this.currentRow, "编辑机构");
     },
     handleDelete(row) {
+      console.log(row, "删除机构");
       this.$confirm("删除后数据不可恢复，是否继续？", "警告", {
         type: "warning",
-      }).then(() => {
-        deleteOrg({ id: row.id }).then(() => {
-          this.$message.success("删除成功");
-          this.fetchList();
+      })
+        .then(async () => {
+          // deleteOrg({ id: row.id }).then(() => {
+          //   this.$message.success("删除成功");
+          //   this.fetchList();
+          // });
+          try {
+            await deleteOrg({ orgId: row.orgId });
+            this.$message.success("删除成功");
+            this.fetchList();
+          } catch (error) {
+            this.$message.error(error.message || "删除机构失败");
+          }
+        })
+        .catch(() => {
+          this.$message.info("删除操作已取消");
         });
-      });
     },
     handleSizeChange(size) {
       this.query.pageSize = size;

@@ -4,11 +4,12 @@
     :visible.sync="showDialog"
     width="800px"
     :before-close="handleClose"
+    destroy-on-close
   >
     <el-form ref="form" :model="form" :rules="rules" label-width="100px">
       <el-form-item label="角色名称" prop="name">
         <el-input
-          v-model="form.name"
+          v-model="form.roleName"
           maxlength="20"
           show-word-limit
           placeholder="请输入角色名称，最多20字"
@@ -17,7 +18,7 @@
 
       <el-form-item label="角色描述">
         <el-input
-          v-model="form.description"
+          v-model="form.roleDesc"
           maxlength="20"
           show-word-limit
           placeholder="请输入角色描述，最多20字"
@@ -35,14 +36,14 @@
       <div class="permission-label">
         <span style="color: #f56c6c; margin-right: 4px">*</span>权限设置：
       </div>
-      <el-table :data="permissionList" border style="margin-top: 10px">
+      <el-table :data="currentUserPermTree" border style="margin-top: 10px">
         <el-table-column label="菜单权限" width="180">
           <template slot-scope="{ row }">
             <el-checkbox
               v-model="row.checked"
               @change="(val) => handleMenuCheck(val, row)"
             >
-              {{ row.name }}
+              {{ row.menuName }}
             </el-checkbox>
           </template>
         </el-table-column>
@@ -50,12 +51,12 @@
           <template slot-scope="{ row }">
             <div class="action-checkbox-group">
               <el-checkbox
-                v-for="action in row.actions"
-                :key="action.value"
+                v-for="action in row.children"
+                :key="action.menuId"
                 v-model="action.checked"
                 @change="(val) => handleActionCheck(val, row)"
               >
-                {{ action.label }}
+                {{ action.menuName }}
               </el-checkbox>
             </div>
           </template>
@@ -74,6 +75,7 @@
 
 <script>
 import { addRole, updateRole } from "@/api/role";
+import { getCurrentOrgMenuTree } from "@/api/role";
 
 export default {
   name: "RoleDialog",
@@ -100,81 +102,11 @@ export default {
         status: 1,
       },
       rules: {
-        name: [{ required: true, message: "请输入角色名称", trigger: "blur" }],
+        roleName: [
+          { required: true, message: "请输入角色名称", trigger: "blur" },
+        ],
       },
-      permissionList: [
-        {
-          name: "样本预览",
-          key: "sample_preview",
-          checked: false,
-          actions: [
-            { label: "分析", value: "analyze", checked: false },
-            { label: "导出", value: "export", checked: false },
-            { label: "上传", value: "upload", checked: false },
-            { label: "修改病例", value: "modify_case", checked: false },
-            { label: "咨询", value: "consult", checked: false },
-          ],
-        },
-        {
-          name: "专家咨询",
-          key: "expert_consult",
-          checked: false,
-          actions: [
-            { label: "咨询", value: "consult", checked: false },
-            { label: "编辑", value: "edit", checked: false },
-            { label: "删除", value: "delete", checked: false },
-            { label: "撤回", value: "recall", checked: false },
-            { label: "再次咨询", value: "re_consult", checked: false },
-            { label: "拒绝原因", value: "reject_reason", checked: false },
-          ],
-        },
-        {
-          name: "专家复核",
-          key: "expert_review",
-          checked: false,
-          actions: [
-            { label: "复核", value: "review", checked: false },
-            { label: "拒绝", value: "reject", checked: false },
-          ],
-        },
-        {
-          name: "专家确认",
-          key: "expert_confirm",
-          checked: false,
-          actions: [{ label: "确认", value: "confirm", checked: false }],
-        },
-        {
-          name: "机构管理",
-          key: "org_manage",
-          checked: false,
-          actions: [
-            { label: "新建机构", value: "create", checked: false },
-            { label: "编辑", value: "edit", checked: false },
-            { label: "删除", value: "delete", checked: false },
-          ],
-        },
-        {
-          name: "角色管理",
-          key: "role_manage",
-          checked: false,
-          actions: [
-            { label: "新建角色", value: "create", checked: false },
-            { label: "编辑", value: "edit", checked: false },
-            { label: "删除", value: "delete", checked: false },
-            { label: "日志管理", value: "log_manage", checked: false },
-          ],
-        },
-        {
-          name: "用户管理",
-          key: "user_manage",
-          checked: false,
-          actions: [
-            { label: "新建用户", value: "create", checked: false },
-            { label: "编辑", value: "edit", checked: false },
-            { label: "删除", value: "delete", checked: false },
-          ],
-        },
-      ],
+      currentUserPermTree: [],
     };
   },
   computed: {
@@ -191,25 +123,26 @@ export default {
     visible(val) {
       if (val) {
         if (this.mode === "edit" && this.rowData) {
+          console.log(this.rowData);
           this.form = {
-            id: this.rowData.id,
-            name: this.rowData.name,
-            description: this.rowData.description,
+            roleId: this.rowData.roleId,
+            roleName: this.rowData.roleName,
+            roleDesc: this.rowData.roleDesc,
             status: this.rowData.status,
           };
           // 回显权限
-          if (this.rowData.permissions) {
-            this.restorePermissions(this.rowData.permissions);
+          if (this.rowData.CurrentUserPermTree) {
+            this.restoreCurrentUserPermTree(this.rowData.menuIds);
           } else {
-            this.resetPermissions();
+            this.resetCurrentUserPermTree();
           }
         } else {
           this.form = {
-            name: "",
-            description: "",
+            roleName: "",
+            roleDesc: "",
             status: 1,
           };
-          this.resetPermissions();
+          this.resetCurrentUserPermTree();
         }
         this.$nextTick(() => {
           this.$refs.form.clearValidate();
@@ -217,7 +150,19 @@ export default {
       }
     },
   },
+  async created() {
+    await this.currentOrgMenuTree();
+  },
   methods: {
+    async currentOrgMenuTree() {
+      try {
+        // console.log(getMenu);
+        const res = await getCurrentOrgMenuTree();
+        this.currentUserPermTree = res || [];
+      } catch (error) {
+        this.$message.error(error.message || "获取用户权限失败");
+      }
+    },
     handleClose() {
       this.showDialog = false;
     },
@@ -245,22 +190,24 @@ export default {
         }
       }
     },
-    resetPermissions() {
-      this.permissionList.forEach((item) => {
+    resetCurrentUserPermTree() {
+      this.currentUserPermTree.forEach((item) => {
         item.checked = false;
         item.actions.forEach((action) => {
           action.checked = false;
         });
       });
     },
-    restorePermissions(savedPermissions) {
+    restoreCurrentUserPermTree(savedCurrentUserPermTree) {
       // 先重置
-      this.resetPermissions();
+      this.resetCurrentUserPermTree();
       // 回填
-      if (!Array.isArray(savedPermissions)) return;
+      if (!Array.isArray(savedCurrentUserPermTree)) return;
 
-      savedPermissions.forEach((savedItem) => {
-        const target = this.permissionList.find((p) => p.key === savedItem.key);
+      savedCurrentUserPermTree.forEach((savedItem) => {
+        const target = this.currentUserPermTree.find(
+          (p) => p.key === savedItem.key
+        );
         if (target) {
           target.checked = true;
           if (Array.isArray(savedItem.actions)) {
@@ -277,38 +224,40 @@ export default {
       });
     },
     handleSubmit() {
-      this.$refs.form.validate((valid) => {
+      this.$refs.form.validate(async (valid) => {
         if (valid) {
           this.loading = true;
 
           // 收集权限数据
-          const permissions = this.permissionList
-            .filter((item) => item.checked)
-            .map((item) => ({
-              key: item.key,
-              name: item.name,
-              actions: item.actions
-                .filter((a) => a.checked)
-                .map((a) => a.value),
-            }));
+          const menuIds = this.currentUserPermTree.flatMap((item) => {
+            // 父节点 menuId（暂不使用）
+            // if (item.checked) {
+            //   ids.push(item.menuId)
+            // }
+
+            return item.children
+              .filter((child) => child.checked)
+              .map((child) => child.menuId);
+          });
 
           const payload = {
             ...this.form,
-            permissions,
+            menuIds,
           };
-
           const api = this.mode === "create" ? addRole : updateRole;
-          api(payload)
-            .then(() => {
-              this.$message.success(
-                this.mode === "create" ? "创建成功" : "编辑成功"
-              );
-              this.$emit("success");
-              this.handleClose();
-            })
-            .finally(() => {
-              this.loading = false;
-            });
+          try {
+            const res = await api(payload);
+            console.log(res);
+            this.$message.success(
+              this.mode === "create" ? "创建成功" : "编辑成功"
+            );
+            this.$emit("success");
+            this.handleClose();
+          } catch (error) {
+            this.$message.error(error.message || "操作失败");
+          } finally {
+            this.loading = false;
+          }
         }
       });
     },

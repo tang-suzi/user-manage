@@ -27,8 +27,11 @@ export default {
     return {};
   },
   computed: {
+    // 隐藏meta中hidden为true的菜单
     routes() {
-      return routes.options.routes[0].children;
+      return routes.options.routes[0].children.filter(
+        (route) => !route.meta.hidden
+      );
     },
   },
 };

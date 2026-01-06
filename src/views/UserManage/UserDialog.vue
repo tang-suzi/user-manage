@@ -4,16 +4,19 @@
     :visible.sync="showDialog"
     width="520px"
     :before-close="handleClose"
+    destroy-on-close
   >
     <el-form ref="form" :model="form" :rules="rules" label-width="100px">
       <!-- 账号 -->
       <el-form-item label="账号" prop="account">
         <el-input
+          v-if="!isEdit"
           v-model="form.account"
           :disabled="isEdit"
           placeholder="请输入3-20位字母、数字"
           maxlength="20"
         />
+        <div v-else>{{ form.account }}</div>
         <div v-if="form.account && form.account.length > 20" class="error-tip">
           字数超限
         </div>
@@ -22,7 +25,7 @@
       <!-- 用户名 -->
       <el-form-item label="用户名" prop="name">
         <el-input
-          v-model="form.name"
+          v-model="form.userName"
           placeholder="请输入3-20位字母、数字"
           maxlength="20"
         />
@@ -35,25 +38,23 @@
           type="password"
           placeholder="请输入6-12位字母、数字、密码"
           show-password
-          v-if="!isEdit"
         />
-        <el-input
-          v-else
-          value="****"
-          disabled
-          placeholder="密码不可编辑"
-        ></el-input>
       </el-form-item>
 
       <!-- 角色 -->
       <el-form-item label="角色" prop="roleId">
         <el-select
-          v-model="form.roleId"
+          v-model="form.roleIds"
           placeholder="请选择角色"
           style="width: 100%"
+          multiple
         >
-          <el-option label="管理员" value="admin" />
-          <el-option label="普通用户" value="user" />
+          <el-option
+            v-for="item in roleOptions"
+            :key="item.roleId"
+            :label="item.roleName"
+            :value="item.roleId"
+          />
           <!-- <el-option
             v-for="item in roleOptions"
             :key="item.roleId"
@@ -83,7 +84,13 @@
 </template>
 
 <script>
-import { addUser, updateUser } from "@/api/user";
+import { aesEncrypt } from "@/utils/encryptAES";
+import {
+  addUser,
+  updateUser,
+  getRoleListByOrg,
+  getUserDetail,
+} from "@/api/user";
 
 export default {
   name: "UserDialog",
@@ -100,21 +107,18 @@ export default {
       type: Object,
       default: () => ({}),
     },
-    roleOptions: {
-      type: Array,
-      default: () => [],
-    },
   },
   data() {
     return {
       loading: false,
       form: {
         account: "",
-        name: "",
+        userName: "",
         password: "",
-        roleId: "",
+        roleIds: "",
         status: 1,
       },
+      roleOptions: [],
       rules: {
         account: [
           { required: true, message: "请输入账号", trigger: "blur" },
@@ -124,7 +128,7 @@ export default {
             trigger: "blur",
           },
         ],
-        name: [
+        userName: [
           { required: true, message: "请输入用户名", trigger: "blur" },
           {
             pattern: /^[A-Za-z0-9\u4e00-\u9fa5]{2,20}$/,
@@ -144,7 +148,9 @@ export default {
             trigger: "blur",
           },
         ],
-        roleId: [{ required: true, message: "请选择角色", trigger: "change" }],
+        isSysAdmin: [
+          { required: true, message: "请选择角色", trigger: "change" },
+        ],
       },
     };
   },
@@ -188,24 +194,61 @@ export default {
       }
     },
   },
+  mounted() {
+    this.getRoleOptions();
+    this.userDetail();
+  },
+  destroyed() {
+    this.form = {
+      account: "",
+      userName: "",
+      password: "",
+      roleIds: "",
+      status: 1,
+    };
+  },
   methods: {
+    async userDetail() {
+      const userId = this.rowData.userId;
+      try {
+        const res = await getUserDetail({ userId });
+        this.form = { ...res };
+      } catch (error) {
+        this.$message.error(error.message || "获取用户详情失败");
+        return {};
+      }
+    },
+    async getRoleOptions() {
+      try {
+        const userInfo = JSON.parse(localStorage.getItem("userInfo"));
+        console.log(userInfo);
+        const res = await getRoleListByOrg({ orgId: userInfo.orgId });
+        this.roleOptions = res || [];
+      } catch (error) {
+        this.$message.error(error.message || "获取角色列表失败");
+      }
+    },
     handleClose() {
       this.showDialog = false;
     },
     handleSubmit() {
-      this.$refs.form.validate((valid) => {
+      this.$refs.form.validate(async (valid) => {
         if (valid) {
           this.loading = true;
+          // 密码加密
+          this.form.password = aesEncrypt(this.form.password);
           const api = this.isEdit ? updateUser : addUser;
-          api(this.form)
-            .then(() => {
-              this.$message.success(this.isEdit ? "编辑成功" : "创建成功");
-              this.$emit("success");
-              this.handleClose();
-            })
-            .finally(() => {
-              this.loading = false;
-            });
+          try {
+            const res = await api(this.form);
+            console.log(res);
+            this.$message.success(this.isEdit ? "编辑成功" : "创建成功");
+            this.$emit("success");
+            this.handleClose();
+          } catch (error) {
+            this.$message.error(error.message || "操作失败");
+          } finally {
+            this.loading = false;
+          }
         }
       });
     },

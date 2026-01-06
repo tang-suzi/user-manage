@@ -4,7 +4,7 @@
     <el-form :inline="true" :model="query" class="query-form">
       <el-form-item>
         <el-input
-          v-model="query.keyword"
+          v-model="query.roleName"
           placeholder="请输入角色名称 / 创建人"
           maxlength="20"
           clearable
@@ -34,27 +34,39 @@
         <!-- 多选 -->
         <el-table-column type="selection" width="50" />
 
-        <el-table-column prop="id" label="角色ID" width="180" />
-
-        <el-table-column prop="name" label="角色名称" show-overflow-tooltip />
+        <el-table-column prop="roleId" label="角色ID" width="180" />
 
         <el-table-column
-          prop="description"
+          prop="roleName"
+          label="角色名称"
+          show-overflow-tooltip
+        />
+
+        <el-table-column
+          prop="roleDesc"
           label="角色描述"
           show-overflow-tooltip
         />
 
-        <el-table-column prop="creator" label="创建人姓名" width="120" />
+        <el-table-column prop="createBy" label="创建人姓名" width="120" />
 
         <el-table-column prop="status" label="启用状态" width="100">
           <template slot-scope="{ row }">
-            <el-tag :type="row.status === 'enabled' ? 'success' : 'info'">
-              {{ row.status === "enabled" ? "启用" : "禁用" }}
+            <el-tag :type="row.status === 1 ? 'success' : 'info'">
+              {{ row.status === 1 ? "启用" : "禁用" }}
             </el-tag>
           </template>
         </el-table-column>
 
-        <el-table-column prop="createTime" label="创建时间" width="160" />
+        <el-table-column prop="createTime" label="创建时间" width="160">
+          <template slot-scope="{ row }">
+            {{
+              row.createTime
+                ? dayjs(row.createTime).format("YYYY-MM-DD HH:mm:ss")
+                : "--"
+            }}
+          </template>
+        </el-table-column>
 
         <el-table-column label="操作" width="160" fixed="right">
           <template slot-scope="{ row }">
@@ -88,6 +100,7 @@
       @current-change="handlePageChange"
     />
     <role-dialog
+      v-if="dialogVisible"
       :visible.sync="dialogVisible"
       :mode="dialogMode"
       :rowData="currentRow"
@@ -96,8 +109,9 @@
   </div>
 </template>
 <script>
+import dayjs from "dayjs";
 import RoleDialog from "./RoleDialog";
-import { getRoleList, deleteRole } from "@/api/role";
+import { getRoleList, deleteRole, getRoleDetail } from "@/api/role";
 
 export default {
   name: "RoleManage",
@@ -106,11 +120,14 @@ export default {
   },
   data() {
     return {
+      dayjs,
       loading: false,
       list: [],
       total: 0,
       selectedRows: [],
       query: {
+        roleName: "",
+        roleId: "",
         keyword: "",
         pageNum: 1,
         pageSize: 20,
@@ -120,27 +137,28 @@ export default {
       currentRow: {},
     };
   },
-  created() {
+  async created() {
     this.fetchList();
   },
   methods: {
     /** 获取角色列表 */
-    fetchList() {
+    async fetchList() {
       this.loading = true;
       const params = {
-        keyword: this.query.keyword,
-        page: this.query.pageNum,
-        limit: this.query.pageSize,
+        roleName: "",
+        roleId: "",
+        pageNum: this.query.pageNum,
+        pageSize: this.query.pageSize,
       };
-      getRoleList(params)
-        .then((res) => {
-          this.list = res.data.items;
-          this.total = res.data.total;
-          console.log(this.list);
-        })
-        .finally(() => {
-          this.loading = false;
-        });
+      try {
+        let { records, total } = await getRoleList(params);
+        this.list = records;
+        this.total = total;
+      } catch (error) {
+        this.$message.error(error.message);
+      } finally {
+        this.loading = false;
+      }
     },
 
     /** 查询 */
@@ -157,22 +175,36 @@ export default {
     },
 
     /** 编辑角色 */
-    handleEdit(row) {
+    async handleEdit(row) {
       this.dialogMode = "edit";
-      this.currentRow = { ...row };
-      this.dialogVisible = true;
+      // this.currentRow = { ...row };
+      // this.dialogVisible = true;
+      try {
+        let res = await getRoleDetail({ roleId: row.roleId });
+        this.currentRow = { ...this.currentRow, ...res.data };
+        this.dialogVisible = true;
+      } catch (error) {
+        this.$message.error(error.message);
+      }
     },
 
     /** 删除角色 */
     handleDelete(row) {
       this.$confirm("删除后不可恢复，是否继续？", "警告", {
         type: "warning",
-      }).then(() => {
-        deleteRole({ id: row.id }).then(() => {
-          this.$message.success("删除成功");
-          this.fetchList();
+      })
+        .then(async () => {
+          try {
+            await deleteRole({ roleId: row.roleId });
+            this.$message.success("删除成功");
+            this.fetchList();
+          } catch (error) {
+            this.$message.error(error.message);
+          }
+        })
+        .catch(() => {
+          this.$message.info("删除操作已取消");
         });
-      });
     },
 
     /** 多选 */
