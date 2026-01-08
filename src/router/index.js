@@ -77,6 +77,16 @@ const routes = [
           hidden: true,
         },
       },
+      {
+        path: "/training/quality-evaluation/exam",
+        name: "qualityEvaluationExam",
+        component: () =>
+          import("@/views/TrainingCenter/QualityEvaluationExam.vue"),
+        meta: {
+          title: "多中心质量评价考试",
+          hidden: true,
+        },
+      },
     ],
   },
   {
@@ -93,6 +103,20 @@ const router = new VueRouter({
   mode: "hash",
   base: process.env.BASE_URL,
   routes,
+});
+
+router.beforeEach((to, from, next) => {
+  localStorage.removeItem("currentTab");
+  if (to.path === "/login") {
+    next();
+  } else {
+    const token = localStorage.getItem("token");
+    if (token) {
+      next();
+    } else {
+      next({ path: "/login" });
+    }
+  }
 });
 
 export default router;

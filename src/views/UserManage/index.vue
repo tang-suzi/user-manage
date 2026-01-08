@@ -4,7 +4,7 @@
     <el-form :inline="true" :model="query" class="query-form">
       <el-form-item>
         <el-input
-          v-model="query.keyword"
+          v-model="query.keyWord"
           placeholder="搜索账号、用户姓名"
           maxlength="20"
           clearable
@@ -38,15 +38,17 @@
 
         <el-table-column prop="userName" label="用户姓名" width="120" />
 
-        <el-table-column prop="orgId" label="机构" show-overflow-tooltip />
+        <el-table-column prop="orgName" label="机构" show-overflow-tooltip />
 
-        <el-table-column prop="isSysAdmin" label="角色" width="120" />
+        <el-table-column prop="roleNames" label="角色" width="120" />
 
         <el-table-column prop="createBy" label="创建人姓名" width="120" />
 
         <el-table-column prop="status" label="启动状态" width="100">
           <template slot-scope="{ row }">
-            {{ row.status === 1 ? "启动" : "禁用" }}
+            <el-tag :type="row.status === 1 ? 'success' : 'info'">
+              {{ row.status === 1 ? "启用" : "禁用" }}
+            </el-tag>
           </template>
         </el-table-column>
 
@@ -61,7 +63,7 @@
             <el-button
               type="text"
               size="small"
-              style="color: #409eff"
+              style="color: red"
               @click="handleDelete(row)"
             >
               删除
@@ -86,7 +88,6 @@
 
     <!-- 新建/编辑用户 Dialog -->
     <user-dialog
-      ref="userDialog"
       v-if="dialogVisible"
       :visible.sync="dialogVisible"
       :mode="dialogMode"
@@ -114,7 +115,7 @@ export default {
       query: {
         userName: "",
         account: "",
-        keyword: "",
+        keyWord: "",
         orgId: "",
         pageNum: 1,
         pageSize: 20,
@@ -131,15 +132,13 @@ export default {
     /** 获取用户列表 */
     async fetchList() {
       this.loading = true;
+      const params = {
+        keyWord: this.query.keyWord,
+        page: this.query.pageNum,
+        size: this.query.pageSize,
+      };
       try {
-        let { records, total } = await getUserList({
-          userName: this.query.userName,
-          account: this.query.account,
-          keyword: this.query.keyword,
-          orgId: this.query.orgId,
-          page: this.query.pageNum,
-          limit: this.query.pageSize,
-        });
+        let { records, total } = await getUserList(params);
         this.list = records;
         this.total = total;
       } catch (error) {

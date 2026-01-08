@@ -58,7 +58,11 @@ service.interceptors.request.use(
 // 响应拦截器
 service.interceptors.response.use(
   (response) => {
-    // 对响应数据做点什么
+    if (
+      response.request.responseURL.includes("/train/train/upload/mgr/download/")
+    ) {
+      return response.data;
+    }
     const res = response.data.data;
     return res;
   },

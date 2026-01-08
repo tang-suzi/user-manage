@@ -54,7 +54,7 @@
                 v-for="action in row.children"
                 :key="action.menuId"
                 v-model="action.checked"
-                @change="(val) => handleActionCheck(val, row)"
+                @change="(val) => handleActionCheck(val, row, action.menuId)"
               >
                 {{ action.menuName }}
               </el-checkbox>
@@ -75,7 +75,8 @@
 
 <script>
 import { addRole, updateRole } from "@/api/role";
-import { getCurrentOrgMenuTree } from "@/api/role";
+import { getRoleDetail } from "@/api/role";
+import cloneDeep from "lodash/cloneDeep";
 
 export default {
   name: "RoleDialog",
@@ -91,6 +92,10 @@ export default {
     rowData: {
       type: Object,
       default: () => ({}),
+    },
+    userPermTree: {
+      type: Array,
+      default: () => [],
     },
   },
   data() {
@@ -120,47 +125,53 @@ export default {
     },
   },
   watch: {
-    visible(val) {
-      if (val) {
-        if (this.mode === "edit" && this.rowData) {
-          console.log(this.rowData);
-          this.form = {
-            roleId: this.rowData.roleId,
-            roleName: this.rowData.roleName,
-            roleDesc: this.rowData.roleDesc,
-            status: this.rowData.status,
-          };
-          // 回显权限
-          if (this.rowData.CurrentUserPermTree) {
-            this.restoreCurrentUserPermTree(this.rowData.menuIds);
+    visible: {
+      handler(val) {
+        if (val && this.mode === "edit") {
+          if (this.rowData) {
+            this.getDetail();
           } else {
+            this.form = {
+              roleName: "",
+              roleDesc: "",
+              status: 1,
+            };
             this.resetCurrentUserPermTree();
           }
-        } else {
-          this.form = {
-            roleName: "",
-            roleDesc: "",
-            status: 1,
-          };
-          this.resetCurrentUserPermTree();
         }
         this.$nextTick(() => {
           this.$refs.form.clearValidate();
         });
-      }
+      },
+      immediate: true,
+    },
+    userPermTree: {
+      handler(val) {
+        this.currentUserPermTree = cloneDeep(val);
+      },
+      immediate: true,
     },
   },
-  async created() {
-    await this.currentOrgMenuTree();
-  },
   methods: {
-    async currentOrgMenuTree() {
+    async getDetail() {
       try {
-        // console.log(getMenu);
-        const res = await getCurrentOrgMenuTree();
-        this.currentUserPermTree = res || [];
+        const data = await getRoleDetail({ roleId: this.rowData.roleId });
+        if (data) {
+          this.form = {
+            roleId: data.roleId,
+            roleName: data.roleName,
+            roleDesc: data.roleDesc,
+            status: data.status,
+          };
+          // 回显权限
+          if (data.menuIds) {
+            this.restoreCurrentUserPermTree(data.menuIds);
+          } else {
+            this.resetCurrentUserPermTree();
+          }
+        }
       } catch (error) {
-        this.$message.error(error.message || "获取用户权限失败");
+        this.$message.error(error.message || "获取角色详情失败");
       }
     },
     handleClose() {
@@ -168,57 +179,63 @@ export default {
     },
     // 菜单全选/取消全选
     handleMenuCheck(val, row) {
-      row.actions.forEach((action) => {
-        action.checked = val;
-      });
+      row.checked = val;
+      if (val) {
+        row.children.forEach((child) => {
+          child.checked = true;
+        });
+      } else {
+        row.children.forEach((child) => {
+          child.checked = false;
+        });
+      }
     },
     // 操作权限选择
-    handleActionCheck(val, row) {
-      // 如果选中了任意一个操作，菜单也自动选中
-      if (val) {
+    handleActionCheck(val, row, menuId) {
+      row.children.forEach((action) => {
+        if (action.menuId === menuId) {
+          action.checked = val;
+        }
+      });
+      console.log(val, row, menuId);
+      const hasChecked = row.children.some((child) => child.checked);
+      if (hasChecked) {
         row.checked = true;
       } else {
-        // 如果所有操作都取消了，菜单是否要取消？
-        // 原型图中似乎菜单可以单独选（作为入口权限），所以这里不强制取消菜单
-        // 但通常逻辑是：如果所有操作都没选，菜单选了也没啥用，或者菜单选了代表有“查看”权限
-        // 这里暂时保留菜单选中状态，除非用户手动取消菜单
-        // 如果需求是“只要有一个操作被选中，菜单必须选中”，上面已经满足
-        // 如果需求是“如果所有操作都没选中，菜单自动取消”，可以加下面逻辑：
-        const hasChecked = row.actions.some((a) => a.checked);
-        if (!hasChecked) {
-          // row.checked = false; // 暂时注释，允许只有菜单权限
-        }
+        row.checked = false;
       }
     },
     resetCurrentUserPermTree() {
-      this.currentUserPermTree.forEach((item) => {
-        item.checked = false;
-        item.actions.forEach((action) => {
-          action.checked = false;
-        });
-      });
+      const queue = [...this.currentUserPermTree];
+      while (queue.length > 0) {
+        const current = queue.shift();
+        current.checked = false;
+        if (Array.isArray(current.children)) {
+          queue.push(...current.children);
+        }
+      }
     },
-    restoreCurrentUserPermTree(savedCurrentUserPermTree) {
+    restoreCurrentUserPermTree(menuIds = []) {
       // 先重置
       this.resetCurrentUserPermTree();
       // 回填
-      if (!Array.isArray(savedCurrentUserPermTree)) return;
-
-      savedCurrentUserPermTree.forEach((savedItem) => {
-        const target = this.currentUserPermTree.find(
-          (p) => p.key === savedItem.key
-        );
-        if (target) {
-          target.checked = true;
-          if (Array.isArray(savedItem.actions)) {
-            savedItem.actions.forEach((savedActionVal) => {
-              const action = target.actions.find(
-                (a) => a.value === savedActionVal
-              );
-              if (action) {
-                action.checked = true;
-              }
-            });
+      if (!Array.isArray(menuIds)) return;
+      menuIds.forEach((menu) => {
+        const queue = [...this.currentUserPermTree];
+        while (queue.length > 0) {
+          const current = queue.shift();
+          if (current.menuId === menu) {
+            current.checked = true;
+            // 递归设置父节点 checked
+            let parent = current.parent;
+            while (parent) {
+              parent.checked = true;
+              parent = parent.parent;
+            }
+            break;
+          }
+          if (Array.isArray(current.children)) {
+            queue.push(...current.children);
           }
         }
       });
@@ -229,15 +246,17 @@ export default {
           this.loading = true;
 
           // 收集权限数据
-          const menuIds = this.currentUserPermTree.flatMap((item) => {
-            // 父节点 menuId（暂不使用）
-            // if (item.checked) {
-            //   ids.push(item.menuId)
-            // }
+          const menuIds = [];
 
-            return item.children
-              .filter((child) => child.checked)
-              .map((child) => child.menuId);
+          this.currentUserPermTree.forEach((menu) => {
+            if (menu.checked) {
+              menuIds.push(menu.menuId);
+            }
+            menu.children.forEach((child) => {
+              if (child.checked) {
+                menuIds.push(child.menuId);
+              }
+            });
           });
 
           const payload = {

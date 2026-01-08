@@ -2,10 +2,18 @@
   <div class="evaluation-detail">
     <!-- Top Bar with Back Button (optional, though design shows it at bottom) -->
     <div class="bottom-actions">
-      <el-button type="primary" @click="handleExam" class="action-btn"
-        >抽题考试</el-button
+      <el-button
+        type="primary"
+        size="small"
+        @click="handleExam"
+        class="action-btn"
+        >开始考试</el-button
       >
-      <el-button type="primary" @click="handleBack" class="action-btn"
+      <el-button
+        type="primary"
+        size="small"
+        @click="handleBack"
+        class="action-btn"
         >返回</el-button
       >
     </div>
@@ -33,7 +41,7 @@
           <div class="question-content">
             <div class="question-text">
               <span class="index">{{ item.questionId }}. </span>
-              {{ item.content }}
+              {{ item.questionContent }}
             </div>
 
             <!-- Image -->
@@ -58,9 +66,9 @@
                   class="answer-input"
                 ></el-input>
                 <!-- Wrong Answer Marker (Image style) -->
-                <div v-if="!item.isCorrect" class="wrong-mark">
+                <!-- <div v-if="!item.isCorrect" class="wrong-mark">
                   <span class="correct-answer">{{ item.questionContent }}</span>
-                </div>
+                </div> -->
               </div>
             </div>
           </div>

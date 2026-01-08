@@ -1,8 +1,7 @@
 <template>
   <div class="practice-container">
     <div class="practice-header">
-      <el-button type="primary" @click="reRandomQuestions">重新抽题</el-button>
-      <el-button type="primary" @click="startExam">开始考试</el-button>
+      <el-button type="primary" @click="reRandomQuality">重新抽题</el-button>
     </div>
     <div class="practice-list">
       <div
@@ -13,15 +12,6 @@
         <div class="question-header">
           <span class="question-index">{{ index + 1 }}. </span>
           <span class="question-content">{{ item.questionContent }}</span>
-          <!-- Result Indicator -->
-          <i
-            v-if="isSubmitted && item.isCorrect"
-            class="el-icon-check correct-icon"
-          ></i>
-          <i
-            v-if="isSubmitted && !item.isCorrect"
-            class="el-icon-close wrong-icon"
-          ></i>
         </div>
 
         <div class="karyotype-image">
@@ -31,11 +21,11 @@
             :key="img"
           >
             <el-image
+              style="width: 100px; height: 100px; margin-left: 10px"
               :src="img"
-              alt="Karyotype"
-              style="width: 100px; height: auto; margin-right: 10px"
               :preview-src-list="item.questionImg"
-            />
+            >
+            </el-image>
           </div>
         </div>
 
@@ -47,30 +37,22 @@
             :disabled="isSubmitted"
             size="small"
             class="answer-input"
-          ></el-input>
-          <div v-if="isSubmitted && !item.isCorrect" class="correct-answer">
-            参考答案: {{ item.correctAnswer }}
-          </div>
+          />
         </div>
       </div>
     </div>
 
     <div class="practice-footer">
-      <el-button type="primary" @click="handleSubmit" v-if="!isSubmitted"
-        >提交</el-button
-      >
-      <el-button type="primary" @click="resetPractice" v-else
-        >再次练习</el-button
-      >
+      <el-button type="primary" @click="handleSubmit">提交</el-button>
     </div>
   </div>
 </template>
 
 <script>
 import {
-  getPracticeList,
-  judgePractice,
-  getReRandomQuestions,
+  getRandomQuality,
+  judgeQuality,
+  getReRandomQuality,
 } from "@/api/training";
 
 export default {
@@ -84,11 +66,12 @@ export default {
     };
   },
   created() {
-    this.fetchPracticeData();
+    this.fetchRandomQualityData();
   },
   methods: {
     // 重新抽题
-    async reRandomQuestions() {
+    async reRandomQuality() {
+      // e.校验是否有未提交数据，含未提交数据提示：“本次答题将不被记录，是否重新抽题？”【确认】【继续答题】
       if (!this.isSubmitted) {
         this.$confirm("本次答题将不被记录，是否重新抽题？", "确认重新抽题", {
           confirmButtonText: "确认",
@@ -101,7 +84,7 @@ export default {
                 paperId: this.paperId,
               };
               let { trainRandomQuestionInfoList, paperId } =
-                await getReRandomQuestions(params);
+                await getReRandomQuality(params);
               this.paperId = paperId;
               this.practiceList = trainRandomQuestionInfoList;
             } catch (error) {
@@ -112,22 +95,18 @@ export default {
             return;
           });
       } else {
-        this.fetchPracticeData();
+        this.fetchRandomQualityData();
       }
     },
-    async startExam() {
-      this.$router.push({
-        path: "/training/quality-evaluation/exam",
-      });
-    },
-    async fetchPracticeData() {
+    async fetchRandomQualityData() {
       this.isSubmitted = false;
       this.score = 0;
       this.$emit("update:score", 0);
       this.$emit("update:isSubmitted", false);
       try {
+        // const { trainRandomQuestionInfoList, paperId, startTime } = await getPracticeList();
         const { trainRandomQuestionInfoList, paperId } =
-          await getPracticeList();
+          await getRandomQuality();
         this.paperId = paperId;
         this.practiceList = trainRandomQuestionInfoList;
       } catch (error) {
@@ -139,6 +118,7 @@ export default {
         paperId: this.paperId,
         trainRandomQuestionInfoList: this.practiceList,
       };
+      // 校验是否有未填写数据
       if (this.practiceList.some((item) => !item.answer)) {
         this.$message({
           message: "请填写所有问题答案",
@@ -153,14 +133,14 @@ export default {
       })
         .then(async () => {
           try {
-            await judgePractice(params);
+            await judgeQuality(params);
             this.$message({
               message: "提交成功",
               type: "success",
             });
             this.isSubmitted = true;
           } catch (error) {
-            console.error("提交练习题失败:", error);
+            console.error("提交失败:", error);
           }
         })
         .catch(() => {
@@ -175,6 +155,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+/* Practice Mode Styles */
 .practice-container {
   width: 100%;
   height: 100%;

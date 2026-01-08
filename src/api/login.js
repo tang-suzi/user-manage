@@ -1,9 +1,16 @@
 import request from "@/request";
 
-export function login(data) {
+export function login(params) {
   return request({
     url: "/train/train/auth/login",
     method: "post",
-    params: { ...data },
+    params,
+  });
+}
+
+export function getAllEnableOrg() {
+  return request({
+    url: "/train/train/sys/org/allEnable",
+    method: "get",
   });
 }

@@ -24,7 +24,11 @@
         @click="playVideo(item)"
       >
         <div class="video-cover">
-          <img :src="item.coverUrl" alt="" />
+          <img
+            :src="item.coverUrl"
+            style="width: 100%; height: 100%; object-fit: contain"
+            alt=""
+          />
         </div>
         <div class="video-title">{{ item.title }}</div>
       </div>
@@ -39,26 +43,30 @@ export default {
   name: "TrainingVideo",
   data() {
     return {
+      page: 1,
+      size: 10,
       videoList: [],
       currentVideoUrl: "",
     };
   },
-  created() {
+  mounted() {
     this.fetchData();
   },
   methods: {
     async fetchData() {
       try {
-        console.log(123, "获取视频列表");
-        const { total, items } = await getTrainingVideoList();
-        console.log(total, items);
-        this.videoList = items;
+        const { total, records } = await getTrainingVideoList({
+          page: this.page,
+          size: this.size,
+        });
+        console.log(total, records, "data");
+        this.videoList = records;
       } catch (error) {
         this.$message.error(error.message);
       }
     },
     playVideo(item) {
-      this.currentVideoUrl = item.videoUrl;
+      this.currentVideoUrl = item.playUrl;
     },
   },
 };

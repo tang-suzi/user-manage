@@ -26,6 +26,21 @@
             @keyup.enter.native="handleLogin"
           ></el-input>
         </el-form-item>
+        <el-form-item prop="orgId">
+          <el-select
+            v-model="loginForm.orgId"
+            placeholder="请选择机构"
+            filterable
+            style="width: 100%"
+          >
+            <el-option
+              v-for="item in orgList"
+              :key="item.orgId"
+              :label="item.orgName"
+              :value="item.orgId"
+            ></el-option>
+          </el-select>
+        </el-form-item>
         <el-form-item>
           <el-button
             type="primary"
@@ -42,7 +57,7 @@
 
 <script>
 import { aesEncrypt } from "@/utils/encryptAES";
-import { login } from "@/api/login";
+import { login, getAllEnableOrg } from "@/api/login";
 
 export default {
   name: "LoginPage",
@@ -51,24 +66,38 @@ export default {
       loginForm: {
         account: "",
         password: "",
+        orgId: null,
       },
       loginRules: {
         account: [{ required: true, message: "请输入账号", trigger: "blur" }],
         password: [{ required: true, message: "请输入密码", trigger: "blur" }],
       },
+      orgList: [],
       loading: false,
     };
   },
+  created() {
+    this.fetchOrgList();
+  },
   methods: {
+    async fetchOrgList() {
+      try {
+        let data = await getAllEnableOrg();
+        this.orgList = data || [];
+      } catch (error) {
+        this.$message.error(error.message || "获取机构失败");
+      }
+    },
     handleLogin() {
       this.$refs.loginForm.validate(async (valid) => {
         if (valid) {
           this.loading = true;
           try {
             this.loginForm.password = aesEncrypt(this.loginForm.password);
-            let { accessToken, userInfo, tokenType } = await login(
-              this.loginForm
-            );
+            let { accessToken, userInfo, tokenType } = await login({
+              ...this.loginForm,
+              orgId: 0,
+            });
             localStorage.setItem("token", `${tokenType} ${accessToken}`);
             localStorage.setItem("userInfo", JSON.stringify(userInfo));
             this.$message.success("登录成功");
@@ -78,21 +107,6 @@ export default {
           } finally {
             this.loading = false;
           }
-          // login(this.loginForm)
-          //   .then((response) => {
-          //     this.loading = false;
-          //     // Assuming response contains token or success indication
-          //     // You might want to store token here, e.g., in Vuex or localStorage
-          //     // console.log('Login success', response);
-
-          //     this.$message.success("登录成功");
-          //     this.$router.push("/");
-          //   })
-          //   .catch((error) => {
-          //     this.loading = false;
-          //     console.error(error);
-          //     // Error handling is usually done in request interceptor, but we can add specific handling here
-          //   });
         } else {
           console.log("error submit!!");
           return false;

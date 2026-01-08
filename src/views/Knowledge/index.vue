@@ -105,18 +105,19 @@
       </div>
 
       <!-- Pagination -->
-      <!-- <div class="pagination">
+      <div class="pagination">
         <el-pagination
           @size-change="handleSizeChange"
           @current-change="handleCurrentChange"
           :current-page="page"
           :page-sizes="[10, 20, 50, 100]"
-          :page-size="limit"
+          :page-size="pageSize"
           layout="total, sizes, prev, pager, next, jumper"
           :total="total"
+          style="text-align: center"
         >
         </el-pagination>
-      </div> -->
+      </div>
     </div>
 
     <!-- Empty State / Initial State -->
@@ -137,7 +138,7 @@ export default {
       list: [],
       total: 0,
       page: 1,
-      limit: 20,
+      pageSize: 20,
       loading: false,
       hasSearched: false,
       searchedButNoResult: false,
@@ -147,13 +148,7 @@ export default {
     async handleDownload(row) {
       try {
         let blob = await downloadKnowledgePdf({ id: row.id });
-        console.log(blob);
-        blob = await blob.arrayBuffer();
-        // if (blob.type !== "application/pdf") {
-        //   const text = await blob.text();
-        //   console.error("下载失败，后端返回：", text);
-        //   return;
-        // }
+        blob = new Blob([blob], { type: "application/pdf" });
 
         const url = window.URL.createObjectURL(blob);
 
@@ -180,11 +175,10 @@ export default {
         let { records, total } = await getKnowledgeList({
           keyword: this.keyword,
           page: this.page,
-          size: this.limit,
+          size: this.pageSize,
         });
         this.list = records || [];
         this.total = total || 0;
-        console.log(this.list, "list");
       } catch (error) {
         console.error(error);
       } finally {
@@ -192,7 +186,7 @@ export default {
       }
     },
     handleSizeChange(val) {
-      this.limit = val;
+      this.pageSize = val;
       if (this.hasSearched) {
         this.fetchData();
       }

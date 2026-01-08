@@ -4,7 +4,7 @@
     <el-form :inline="true" :model="query" class="query-form">
       <el-form-item>
         <el-input
-          v-model="query.roleName"
+          v-model="query.keyWord"
           placeholder="请输入角色名称 / 创建人"
           maxlength="20"
           clearable
@@ -104,6 +104,7 @@
       :visible.sync="dialogVisible"
       :mode="dialogMode"
       :rowData="currentRow"
+      :userPermTree="currentUserPermTree"
       @success="fetchList"
     />
   </div>
@@ -111,7 +112,7 @@
 <script>
 import dayjs from "dayjs";
 import RoleDialog from "./RoleDialog";
-import { getRoleList, deleteRole, getRoleDetail } from "@/api/role";
+import { getRoleList, deleteRole, getCurrentOrgMenuTree } from "@/api/role";
 
 export default {
   name: "RoleManage",
@@ -128,25 +129,28 @@ export default {
       query: {
         roleName: "",
         roleId: "",
-        keyword: "",
+        keyWord: "",
         pageNum: 1,
         pageSize: 20,
       },
       dialogVisible: false,
       dialogMode: "create",
       currentRow: {},
+      currentUserPermTree: [],
     };
   },
   async created() {
-    this.fetchList();
+    await this.fetchList();
+    await this.currentOrgMenuTree();
   },
   methods: {
     /** 获取角色列表 */
     async fetchList() {
       this.loading = true;
       const params = {
-        roleName: "",
-        roleId: "",
+        // roleName: "",
+        // roleId: "",
+        keyWord: this.query.keyWord || "",
         pageNum: this.query.pageNum,
         pageSize: this.query.pageSize,
       };
@@ -160,7 +164,22 @@ export default {
         this.loading = false;
       }
     },
-
+    async currentOrgMenuTree() {
+      try {
+        const data = await getCurrentOrgMenuTree();
+        const queue = [...data];
+        while (queue.length > 0) {
+          const current = queue.shift();
+          current.checked = false;
+          if (Array.isArray(current.children)) {
+            queue.push(...current.children);
+          }
+        }
+        this.currentUserPermTree = data || [];
+      } catch (error) {
+        this.$message.error(error.message || "获取用户权限失败");
+      }
+    },
     /** 查询 */
     handleSearch() {
       this.query.pageNum = 1;
@@ -177,15 +196,8 @@ export default {
     /** 编辑角色 */
     async handleEdit(row) {
       this.dialogMode = "edit";
-      // this.currentRow = { ...row };
-      // this.dialogVisible = true;
-      try {
-        let res = await getRoleDetail({ roleId: row.roleId });
-        this.currentRow = { ...this.currentRow, ...res.data };
-        this.dialogVisible = true;
-      } catch (error) {
-        this.$message.error(error.message);
-      }
+      this.currentRow = { ...row };
+      this.dialogVisible = true;
     },
 
     /** 删除角色 */

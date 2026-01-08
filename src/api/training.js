@@ -1,8 +1,9 @@
 import request from "@/request";
 
 export function getTrainingVideoList(params) {
+  console.log(params, "params");
   return request({
-    url: "/train/training/video/list",
+    url: "/train/train/training/video/list",
     method: "get",
     params,
   });
@@ -42,6 +43,30 @@ export function getQualityDetail({ qualityId }) {
 export function judgePractice(data) {
   return request({
     url: "/train/train/training/question/judge",
+    method: "post",
+    data,
+  });
+}
+
+export function getRandomQuality(params) {
+  return request({
+    url: "/train/train/training/quality/randomQuality",
+    method: "get",
+    params,
+  });
+}
+
+export function getReRandomQuality(params) {
+  return request({
+    url: "/train/train/training/quality/reRandomQuality",
+    method: "get",
+    params,
+  });
+}
+
+export function judgeQuality(data) {
+  return request({
+    url: "/train/train/training/question/judgeQuality",
     method: "post",
     data,
   });

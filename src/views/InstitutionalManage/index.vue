@@ -4,9 +4,10 @@
     <el-form :inline="true" :model="query" class="query-form">
       <el-form-item>
         <el-input
-          v-model="query.orgName"
-          placeholder="请输入机构名称"
+          v-model="query.keyWord"
+          placeholder="请输入机构名称、管理员账号、管理员姓名"
           maxlength="20"
+          style="width: 380px"
           clearable
         >
           <el-button
@@ -126,6 +127,7 @@ export default {
         orgName: "",
         adminAccount: "",
         adminName: "",
+        keyWord: "",
         pageNum: 1,
         pageSize: 20,
       },
@@ -144,11 +146,7 @@ export default {
     async fetchList() {
       this.loading = true;
       const params = {
-        orgName: this.query.orgName,
-        // adminAccount: this.query.adminAccount,
-        // adminName: this.query.adminName,
-        pageNum: this.query.pageNum,
-        pageSize: this.query.pageSize,
+        keyWord: this.query.keyWord,
       };
       try {
         const { total, records } = await getOrgList(params);
@@ -191,10 +189,6 @@ export default {
         type: "warning",
       })
         .then(async () => {
-          // deleteOrg({ id: row.id }).then(() => {
-          //   this.$message.success("删除成功");
-          //   this.fetchList();
-          // });
           try {
             await deleteOrg({ orgId: row.orgId });
             this.$message.success("删除成功");

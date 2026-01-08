@@ -36,7 +36,6 @@ export function deleteRole({ roleId }) {
 }
 
 // 角色详情
-// /train/sys/role/queryRoleById/{roleId}
 export function getRoleDetail({ roleId }) {
   return request({
     url: `/train/train/sys/role/queryRoleById/${roleId}`,

@@ -128,26 +128,20 @@ export default {
     },
   },
   watch: {
-    visible(val) {
-      if (val && this.isEdit) {
-        this.fillForm();
-      }
+    visible: {
+      handler(val) {
+        if (val && this.isEdit) {
+          this.fillForm();
+        }
+      },
+      immediate: true,
     },
   },
   methods: {
     fillForm() {
-      const { orgId, orgName, code, adminAccount, adminName, status } =
-        this.rowData;
       this.form = {
-        orgId,
-        orgName,
-        code,
-        adminAccount,
-        adminName,
-        adminPassword: "",
-        status,
+        ...this.rowData,
       };
-      console.log(this.form, "编辑机构form");
     },
     handleSubmit() {
       console.log(this.mode);

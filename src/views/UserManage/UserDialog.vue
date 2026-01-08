@@ -116,7 +116,7 @@ export default {
         userName: "",
         password: "",
         roleIds: "",
-        status: 1,
+        status: 0,
       },
       roleOptions: [],
       rules: {
@@ -138,9 +138,17 @@ export default {
         ],
         password: [
           {
-            required: true,
-            message: "请输入登录密码",
-            trigger: "blur",
+            validator: (rule, value, callback) => {
+              if (this.isEdit) {
+                callback();
+              } else {
+                if (value.length < 6) {
+                  callback(new Error("密码长度不能小于6位"));
+                } else {
+                  callback();
+                }
+              }
+            },
           },
           {
             pattern: /^[A-Za-z0-9]{6,12}$/,
@@ -171,27 +179,13 @@ export default {
     },
   },
   watch: {
-    visible(val) {
-      if (val) {
-        if (this.isEdit) {
+    visible: {
+      handler(val) {
+        if (val && this.isEdit) {
           this.form = { ...this.rowData };
-          // 编辑模式下密码不必填（或是分开处理）
-          // 这里简单处理，编辑模式下密码校验去掉
-          this.rules.password[0].required = false;
-        } else {
-          this.form = {
-            account: "",
-            name: "",
-            password: "",
-            roleId: "",
-            status: 1,
-          };
-          this.rules.password[0].required = true;
         }
-        this.$nextTick(() => {
-          this.$refs.form.clearValidate();
-        });
-      }
+      },
+      immediate: true,
     },
   },
   mounted() {

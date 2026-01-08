@@ -30,7 +30,7 @@ export function updateUser(data) {
 // 删除用户
 export function deleteUser({ userId }) {
   return request({
-    url: `/api/user/delete/${userId}`,
+    url: `/train/train/sys/user/delete/${userId}`,
     method: "delete",
   });
 }
