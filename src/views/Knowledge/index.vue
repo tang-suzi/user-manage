@@ -1,6 +1,6 @@
 <template>
   <div class="knowledge-page">
-    <!-- Search Bar -->
+    <!-- 搜索区 -->
     <div class="search-bar">
       <el-input
         v-model="keyword"
@@ -8,119 +8,115 @@
         class="search-input"
         clearable
         @keyup.enter.native="handleSearch"
-      ></el-input>
+      />
       <el-button
         type="primary"
         @click="handleSearch"
         :disabled="!keyword"
         class="search-btn"
-        >知识检索</el-button
       >
+        知识检索
+      </el-button>
     </div>
 
-    <!-- Results Area -->
-    <div class="results-area" v-if="list.length > 0">
+    <!-- 结果区 -->
+    <div class="results-area" v-if="list.length">
       <div class="results-header">共 {{ total }} 条结果</div>
 
-      <div class="table-container">
+      <!-- 表格滚动容器 -->
+      <div
+        class="table-container"
+        ref="tableContainer"
+        v-infinite-scroll="handleScroll"
+      >
         <el-table
           :data="list"
           style="width: 100%"
-          height="100%"
           v-loading="loading"
           header-cell-class-name="table-header"
         >
           <el-table-column
             type="index"
-            prop="id"
             label="条目"
             width="80"
             align="center"
-          >
-          </el-table-column>
+          />
+
           <el-table-column
             prop="exprssion"
             label="异常核型"
             width="150"
             align="center"
-          >
-          </el-table-column>
+          />
+
           <el-table-column
             prop="disease"
             label="对应疾病"
             width="150"
             align="center"
-          >
-          </el-table-column>
+          />
+
           <el-table-column
             prop="associatedGenes"
             label="核心关联基因"
             width="120"
             align="center"
-          >
-          </el-table-column>
+          />
+
           <el-table-column
             prop="protein"
             label="相关蛋白及功能"
             min-width="200"
             align="left"
             header-align="center"
-          >
-          </el-table-column>
+          />
+
           <el-table-column
             prop="clinicalFeatures"
             label="临床特征"
             min-width="200"
             align="left"
             header-align="center"
-          >
-          </el-table-column>
+          />
+
           <el-table-column
             prop="proInter"
             label="预后与干预"
             min-width="200"
             align="left"
             header-align="center"
-          >
-          </el-table-column>
+          />
+
           <el-table-column
-            label="相关文献简述"
             prop="autoLitAbstract"
+            label="相关文献简述"
             min-width="150"
             align="center"
           >
-            <template slot-scope="scope">
-              <div>{{ scope.row.autoLitAbstract || "-" }}</div>
+            <template slot-scope="{ row }">
+              {{ row.autoLitAbstract || "-" }}
             </template>
           </el-table-column>
+
           <el-table-column label="参考文献" width="100" align="center">
-            <template slot-scope="scope">
-              <div @click="handleDownload(scope.row)" class="pdf-link">
+            <template slot-scope="{ row }">
+              <div class="pdf-link" @click="handleDownload(row)">
                 <i class="el-icon-document pdf-icon"></i>
                 <div>参考文献</div>
               </div>
             </template>
           </el-table-column>
         </el-table>
-      </div>
 
-      <!-- Pagination -->
-      <div class="pagination">
-        <el-pagination
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
-          :current-page="page"
-          :page-sizes="[10, 20, 50, 100]"
-          :page-size="pageSize"
-          layout="total, sizes, prev, pager, next, jumper"
-          :total="total"
-          style="text-align: center"
-        >
-        </el-pagination>
+        <!-- 底部加载提示 -->
+        <div class="load-tip">
+          <span v-if="isLoadingMore">加载中...</span>
+          <span v-else-if="!hasMore">没有更多数据了</span>
+        </div>
       </div>
     </div>
 
-    <!-- Empty State / Initial State -->
+    <!-- 空状态 -->
     <div class="empty-state" v-else>
       <div class="no-result-text">未匹配到结果</div>
     </div>
@@ -138,19 +134,19 @@ export default {
       list: [],
       total: 0,
       page: 1,
-      pageSize: 20,
+      pageSize: 10,
+
       loading: false,
-      hasSearched: false,
-      searchedButNoResult: false,
+      isLoadingMore: false,
+      hasMore: true,
     };
   },
   methods: {
     async handleDownload(row) {
       try {
-        let blob = await downloadKnowledgePdf({ id: row.id });
-        blob = new Blob([blob], { type: "application/pdf" });
-
-        const url = window.URL.createObjectURL(blob);
+        const blob = await downloadKnowledgePdf({ id: row.id });
+        const pdfBlob = new Blob([blob], { type: "application/pdf" });
+        const url = window.URL.createObjectURL(pdfBlob);
 
         const link = document.createElement("a");
         link.href = url;
@@ -160,42 +156,54 @@ export default {
 
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
-      } catch (error) {
-        console.error(error);
+      } catch (e) {
+        console.error(e);
       }
     },
+
     handleSearch() {
       if (!this.keyword) return;
+
       this.page = 1;
+      this.list = [];
+      this.hasMore = true;
+
       this.fetchData();
     },
+
     async fetchData() {
+      if (!this.hasMore) return;
+
       this.loading = true;
+      this.isLoadingMore = this.page > 1;
+
       try {
-        let { records, total } = await getKnowledgeList({
+        const { records, total } = await getKnowledgeList({
           keyword: this.keyword,
           page: this.page,
           size: this.pageSize,
         });
-        this.list = records || [];
+
+        const data = records || [];
+
+        this.list = this.page === 1 ? data : this.list.concat(data);
+
         this.total = total || 0;
-      } catch (error) {
-        console.error(error);
+
+        if (data.length < this.pageSize) {
+          this.hasMore = false;
+        }
+      } catch (e) {
+        this.$message.error(e.message || "获取知识库列表失败");
       } finally {
         this.loading = false;
+        this.isLoadingMore = false;
       }
     },
-    handleSizeChange(val) {
-      this.pageSize = val;
-      if (this.hasSearched) {
-        this.fetchData();
-      }
-    },
-    handleCurrentChange(val) {
-      this.page = val;
-      if (this.hasSearched) {
-        this.fetchData();
-      }
+
+    handleScroll() {
+      this.page++;
+      this.fetchData();
     },
   },
 };
@@ -203,36 +211,27 @@ export default {
 
 <style lang="scss" scoped>
 .knowledge-page {
-  height: 100%;
+  height: calc(100% - 40px);
   display: flex;
   flex-direction: column;
   padding: 20px;
-  box-sizing: border-box;
-  background-color: #fff;
+  background: #fff;
 }
 
 .search-bar {
   display: flex;
   justify-content: center;
-  align-items: center;
-  margin-bottom: 30px;
-  margin-top: 20px;
+  margin: 20px 0 30px;
 
   .search-input {
     width: 600px;
-    margin-right: 0;
 
     ::v-deep .el-input__inner {
-      border-top-right-radius: 0;
-      border-bottom-right-radius: 0;
       height: 40px;
-      line-height: 40px;
     }
   }
 
   .search-btn {
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
     height: 40px;
     padding: 0 30px;
   }
@@ -245,22 +244,21 @@ export default {
   overflow: hidden;
 
   .results-header {
-    margin-bottom: 15px;
+    margin-bottom: 10px;
     color: #606266;
-    font-size: 14px;
   }
+}
 
-  .table-container {
-    flex: 1;
-    overflow: hidden;
-    border: 1px solid #ebeef5;
-  }
+.table-container {
+  flex: 1;
+  overflow-y: auto;
+  border: 1px solid #ebeef5;
+}
 
-  .pagination {
-    padding: 20px 0;
-    text-align: right;
-    flex-shrink: 0;
-  }
+.load-tip {
+  text-align: center;
+  padding: 10px;
+  color: #909399;
 }
 
 .empty-state {
@@ -270,30 +268,26 @@ export default {
   align-items: center;
 
   .no-result-text {
-    font-size: 16px;
     color: #909399;
+    font-size: 16px;
   }
 }
 
 ::v-deep .table-header {
-  background-color: #f5f7fa !important;
-  color: #606266;
+  background-color: #f5f7fa;
   font-weight: bold;
 }
 
 .pdf-link {
+  cursor: pointer;
+  color: #606266;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  text-decoration: none;
-  color: #606266;
-  cursor: pointer;
 
   .pdf-icon {
-    font-size: 24px;
+    font-size: 22px;
     color: #f56c6c;
-    margin-bottom: 5px;
   }
 
   &:hover {

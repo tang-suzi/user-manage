@@ -1,6 +1,5 @@
 <template>
   <div class="video-content">
-    <!-- Left Player -->
     <div class="player-section">
       <div class="player-container" v-if="!currentVideoUrl">
         <span class="player-text">请在右侧选择视频进行播放</span>
@@ -15,8 +14,7 @@
       </div>
     </div>
 
-    <!-- Right List -->
-    <div class="list-section">
+    <div class="list-section" v-infinite-scroll="handleScroll">
       <div
         v-for="item in videoList"
         :key="item.id"
@@ -47,22 +45,38 @@ export default {
       size: 10,
       videoList: [],
       currentVideoUrl: "",
+      hasMore: true,
+      loading: false,
+      isLoadingMore: false,
+      total: 0,
     };
   },
   mounted() {
     this.fetchData();
   },
   methods: {
+    handleScroll() {
+      this.page++;
+      this.fetchData();
+    },
     async fetchData() {
+      if (!this.hasMore) return;
+
+      this.loading = true;
+      this.isLoadingMore = this.page > 1;
       try {
         const { total, records } = await getTrainingVideoList({
           page: this.page,
           size: this.size,
         });
-        console.log(total, records, "data");
         this.videoList = records;
+        this.total = total || 0;
+        this.hasMore = records.length >= this.size;
       } catch (error) {
         this.$message.error(error.message);
+      } finally {
+        this.loading = false;
+        this.isLoadingMore = false;
       }
     },
     playVideo(item) {
