@@ -5,6 +5,7 @@ import userAPI from "./user";
 import trainingAPI from "./training";
 import knowledgeAPI from "./knowledge";
 import consultationAPI from "./consultation";
+import logAPI from "./log";
 
 // 设置延时，模拟网络请求延时
 Mock.setup({
@@ -63,6 +64,9 @@ Mock.mock(
   "post",
   consultationAPI.withdrawConsultation
 );
+
+// 日志管理相关
+Mock.mock(/\/api\/log\/list/, "get", logAPI.getLogList);
 
 // 模拟接口
 Mock.mock(/\/api\/user\/login/, "post", {

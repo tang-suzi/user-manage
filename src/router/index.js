@@ -34,6 +34,14 @@ const routes = [
         },
       },
       {
+        path: "/logManage",
+        name: "logManage",
+        component: () => import("@/views/LogManage"),
+        meta: {
+          title: "日志管理",
+        },
+      },
+      {
         path: "/trainingCenter",
         name: "trainingCenter",
         component: () => import("@/views/TrainingCenter"),
