@@ -16,7 +16,7 @@ const routes = [
         meta: {
           title: "机构管理",
           key: "org",
-          hidden: false,
+          hidden: true,
         },
       },
       {
@@ -26,7 +26,7 @@ const routes = [
         meta: {
           title: "角色管理",
           key: "role",
-          hidden: false,
+          hidden: true,
         },
       },
       {
@@ -36,7 +36,7 @@ const routes = [
         meta: {
           title: "用户管理",
           key: "user",
-          hidden: false,
+          hidden: true,
         },
       },
       {

@@ -27,8 +27,18 @@ export default {
     return {};
   },
   computed: {
+    // 在localStorage中获取菜单树
     // 隐藏meta中hidden为true的菜单
     routes() {
+      const menuTree = JSON.parse(localStorage.getItem("menuTree"));
+      const menus = this.$router.options.routes;
+      menus[0].children.map((menu) => {
+        menuTree.forEach((child) => {
+          if (`/${menu.meta.key}` === child.path) {
+            menu.meta.hidden = false;
+          }
+        });
+      });
       return routes.options.routes[0].children.filter(
         (route) => !route.meta.hidden
       );
