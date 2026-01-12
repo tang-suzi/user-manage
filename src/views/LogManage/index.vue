@@ -19,14 +19,15 @@
           start-placeholder="开始日期"
           end-placeholder="结束日期"
           :picker-options="pickerOptions"
+          format="yyyy-MM-dd"
         >
         </el-date-picker>
       </el-form-item>
       <el-form-item label="操作菜单">
-        <el-select placeholder="操作菜单" v-model="query.operMenu">
-          <el-option label="用户管理" value="userManage" />
-          <el-option label="角色管理" value="roleManage" />
-          <el-option label="日志管理" value="logManage" />
+        <el-select placeholder="操作菜单" v-model="query.operMenu" clearable>
+          <el-option label="机构管理" value="机构管理" />
+          <el-option label="角色管理" value="角色管理" />
+          <el-option label="用户管理" value="用户管理" />
         </el-select>
       </el-form-item>
       <el-form-item>
@@ -48,7 +49,25 @@
         <el-table-column prop="operType" label="操作类型" width="120" />
         <el-table-column prop="operTime" label="操作时间" width="160" />
         <el-table-column prop="operResult" label="操作结果" width="160" />
-        <el-table-column prop="operContent" label="操作描述" width="160" />
+        <el-table-column label="操作描述" width="160">
+          <template slot-scope="scope">
+            <div class="oper-content" :title="scope.row.operContent">
+              <div>
+                {{ scope.row.operContent.slice(0, 5) + "..." }}
+              </div>
+            </div>
+            <!-- <el-tooltip
+              class="item"
+              effect="dark"
+              :content="scope.row.operContent"
+              placement="top-start"
+            >
+              <div>
+                {{ scope.row.operContent.slice(0, 5) + "..." }}
+              </div>
+            </el-tooltip> -->
+          </template>
+        </el-table-column>
       </el-table>
     </div>
 
@@ -69,6 +88,7 @@
 
 <script>
 import { getLogList } from "@/api/log";
+import dayjs from "dayjs";
 
 // import { getLogList } from "@/api/log";
 
@@ -115,8 +135,12 @@ export default {
       const params = {
         operAccount: this.query.operAccount,
         operMenu: this.query.operMenu,
-        operTimeStart: this.query.date[0] ? this.query.date[0].getTime() : null,
-        operTimeEnd: this.query.date[1] ? this.query.date[1].getTime() : null,
+        operTimeStart: this.query.date[0]
+          ? dayjs(this.query.date[0]).format("YYYY-MM-DD")
+          : null,
+        operTimeEnd: this.query.date[1]
+          ? dayjs(this.query.date[1]).format("YYYY-MM-DD")
+          : null,
         pageNum: this.query.pageNum,
         pageSize: this.query.pageSize,
       };
@@ -167,6 +191,7 @@ export default {
   display: flex;
   justify-content: space-between;
   flex-shrink: 0;
+  margin-bottom: 20px;
 }
 .table-container {
   flex: 1;
