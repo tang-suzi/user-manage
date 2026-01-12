@@ -18,7 +18,13 @@
       </el-form-item>
 
       <el-form-item>
-        <el-button type="primary" @click="handleCreate"> 新建角色 </el-button>
+        <el-button
+          type="primary"
+          @click="handleCreate"
+          v-if="permission.includes('role:add')"
+        >
+          新建角色
+        </el-button>
       </el-form-item>
     </el-form>
 
@@ -70,7 +76,12 @@
 
         <el-table-column label="操作" width="160" fixed="right">
           <template slot-scope="{ row }">
-            <el-button type="text" size="small" @click="handleEdit(row)">
+            <el-button
+              type="text"
+              size="small"
+              @click="handleEdit(row)"
+              v-if="permission.includes('role:edit')"
+            >
               编辑
             </el-button>
 
@@ -79,6 +90,7 @@
               size="small"
               style="color: red"
               @click="handleDelete(row)"
+              v-if="permission.includes('role:remove')"
             >
               删除
             </el-button>
@@ -137,11 +149,13 @@ export default {
       dialogMode: "create",
       currentRow: {},
       currentUserPermTree: [],
+      permission: [],
     };
   },
   async created() {
     await this.fetchList();
     await this.currentOrgMenuTree();
+    this.permission = JSON.parse(localStorage.getItem("userInfo")).permissions;
   },
   methods: {
     /** 获取角色列表 */

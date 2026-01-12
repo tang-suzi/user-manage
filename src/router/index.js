@@ -15,6 +15,8 @@ const routes = [
         component: () => import("@/views/InstitutionalManage"),
         meta: {
           title: "机构管理",
+          key: "org",
+          hidden: false,
         },
       },
       {
@@ -23,6 +25,8 @@ const routes = [
         component: () => import("@/views/RoleManage"),
         meta: {
           title: "角色管理",
+          key: "role",
+          hidden: false,
         },
       },
       {
@@ -31,14 +35,8 @@ const routes = [
         component: () => import("@/views/UserManage"),
         meta: {
           title: "用户管理",
-        },
-      },
-      {
-        path: "/logManage",
-        name: "logManage",
-        component: () => import("@/views/LogManage"),
-        meta: {
-          title: "日志管理",
+          key: "user",
+          hidden: false,
         },
       },
       {
@@ -47,6 +45,8 @@ const routes = [
         component: () => import("@/views/TrainingCenter"),
         meta: {
           title: "培训中心",
+          key: "train",
+          hidden: false,
         },
       },
       {
@@ -107,14 +107,21 @@ const routes = [
   },
 ];
 
-const router = new VueRouter({
-  mode: "hash",
-  base: process.env.BASE_URL,
-  routes,
-});
+const createRouter = () =>
+  new VueRouter({
+    mode: "hash",
+    base: process.env.BASE_URL,
+    routes,
+  });
+
+const router = createRouter();
+
+export function resetRouter() {
+  const newRouter = createRouter();
+  router.matcher = newRouter.matcher; // reset router
+}
 
 router.beforeEach((to, from, next) => {
-  localStorage.removeItem("currentTab");
   if (to.path === "/login") {
     next();
   } else {

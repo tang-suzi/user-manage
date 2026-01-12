@@ -18,7 +18,13 @@
       </el-form-item>
 
       <el-form-item>
-        <el-button type="default" @click="handleCreate"> 新建用户 </el-button>
+        <el-button
+          type="default"
+          @click="handleCreate"
+          v-if="permission.includes('user:add')"
+        >
+          新建用户
+        </el-button>
       </el-form-item>
     </el-form>
 
@@ -56,7 +62,12 @@
 
         <el-table-column label="操作" width="160" fixed="right">
           <template slot-scope="{ row }">
-            <el-button type="text" size="small" @click="handleEdit(row)">
+            <el-button
+              type="text"
+              size="small"
+              @click="handleEdit(row)"
+              v-if="permission.includes('user:edit')"
+            >
               编辑
             </el-button>
 
@@ -65,6 +76,7 @@
               size="small"
               style="color: red"
               @click="handleDelete(row)"
+              v-if="permission.includes('user:remove')"
             >
               删除
             </el-button>
@@ -123,9 +135,11 @@ export default {
       dialogVisible: false,
       dialogMode: "create",
       currentRow: {},
+      permission: [],
     };
   },
   created() {
+    this.permission = JSON.parse(localStorage.getItem("userInfo")).permissions;
     this.fetchList();
   },
   methods: {
